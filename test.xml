@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+
+
+<suite name="主流程" parallel="classes" thread-count="3" preserve-order="true">
+
+<!--    <listeners>-->
+<!--        <listener class-name="TestngListenerDemo"/>-->
+<!--    </listeners>-->
+
+    <test name="单页面检查">
+        <classes>
+            <class name="Demo"/>
+            <class name="Demo2"/>
+            <class name="Demo3"/>
+        </classes>
+    </test>
+
+
+
+    <!--    <test name="all">-->
+    <!--        <packages>-->
+    <!--            <package name="testcase.*"/>-->
+
+    <!--        </packages>-->
+    <!--    </test>-->
+
+</suite>
