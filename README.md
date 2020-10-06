@@ -16,9 +16,11 @@ Maven:
 </dependency>
 ```
 
-Code Example:
+#Code Example:
+* 2 changes:
     * add Listener `TestngListener.class`
-    * add annotation `Video`
+    * add annotation `@Video`
+    
 ```
 import com.woxiangbo.anno.Video;
 import com.woxiangbo.listeners.TestngListener;
@@ -34,4 +36,5 @@ public class Demo{
     }
 }
 ```
+
 
