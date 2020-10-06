@@ -36,6 +36,10 @@ public class Demo{
     }
 }
 ```
-after 
+if Test passed, no need screen video
+if Test failed, then the screen video will be saved in `C:\video` with format `*.avi`, certainly, you could declare the the place where video should be saved:
+```
+@Video("c:\\a\\b\\c\\anyFolderYouWant")
+```
 
 
