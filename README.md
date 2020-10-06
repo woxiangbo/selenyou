@@ -1,5 +1,5 @@
 ## selenyou
-a easier way to use selenium with some handy features
+An easier way to use selenium with some handy features
 * handy features
     *   screen record
     *   local invoke with grid
