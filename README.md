@@ -15,3 +15,23 @@ Maven:
     <version>0.0.2</version>
 </dependency>
 ```
+
+Code Example:
+    * add Listener `TestngListener.class`
+    * add annotation `Video`
+```
+import com.woxiangbo.anno.Video;
+import com.woxiangbo.listeners.TestngListener;
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+
+@Listeners(TestngListener.class)
+@Video
+public class Demo{
+    @Test
+    public void test(){
+        assert false;
+    }
+}
+```
+
