@@ -1,9 +1,7 @@
-import com.chenxiangbo.listeners.TestngListener;
+import com.woxiangbo.listeners.TestngListener;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
-
-@Listeners(TestngListener.class)
 
 public class Demo extends Base{
 	@Test

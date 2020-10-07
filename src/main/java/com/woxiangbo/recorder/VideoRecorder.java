@@ -1,4 +1,4 @@
-package com.chenxiangbo.recorder;
+package com.woxiangbo.recorder;
 
 import java.awt.*;
 import java.io.File;
@@ -11,7 +11,6 @@ import static org.monte.media.VideoFormatKeys.*;
 
 /**
  * @author : chenxiangbo
- * @date :2020/9/29 14:43
  */
 public class VideoRecorder {
 	public ScreenRecorder screenRecorder;

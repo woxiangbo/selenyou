@@ -1,4 +1,4 @@
-package com.chenxiangbo.recorder;
+package com.woxiangbo.recorder;
 
 import org.monte.media.Format;
 import org.monte.media.Registry;
@@ -12,7 +12,6 @@ import java.util.Date;
 
 /**
  * @author : chenxiangbo
- * @date :2020/9/29 14:40
  */
 public class SpecializedScreenRecorder extends ScreenRecorder {
 	private String name;

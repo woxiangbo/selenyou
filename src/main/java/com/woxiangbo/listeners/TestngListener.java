@@ -1,8 +1,8 @@
-package com.chenxiangbo.listeners;
+package com.woxiangbo.listeners;
 
-import com.chenxiangbo.Video;
+import com.woxiangbo.anno.Video;
 
-import com.chenxiangbo.recorder.VideoRecorder;
+import com.woxiangbo.recorder.VideoRecorder;
 import org.testng.ITestResult;
 import org.testng.TestListenerAdapter;
 
@@ -13,15 +13,12 @@ import java.lang.annotation.Annotation;
 public class TestngListener extends TestListenerAdapter {
 	private ThreadLocal<VideoRecorder> threadLocal = new ThreadLocal<>();
 	public void onTestStart(ITestResult result) {
-
 		Annotation annotation = result.getTestClass().getRealClass().getAnnotation(Video.class);
-
 		if (annotation != null){
-
 			String className = result.getTestClass().getName();
 			String methodName = result.getMethod().getMethodName();
-			threadLocal.set(new VideoRecorder("C:\\vt",  className + "_" + methodName));
-
+            Video video = (Video) annotation;
+            threadLocal.set(new VideoRecorder(video.store(), className + "_" + methodName));
 		}
 	}
 
@@ -29,10 +26,13 @@ public class TestngListener extends TestListenerAdapter {
 	public void onTestSuccess(ITestResult tr) {
 		super.onTestSuccess(tr);
 		try {
-			threadLocal.get().stopRecording();
-//			String videoFile = threadLocal.get().getVideoFile();
-//			File file = new File(videoFile);
-//			file.delete();
+            VideoRecorder recorder = threadLocal.get();
+            if (recorder != null) {
+                recorder.stopRecording();
+                String videoFile = recorder.getVideoFile();
+                File file = new File(videoFile);
+                file.delete();
+            }
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -42,7 +42,10 @@ public class TestngListener extends TestListenerAdapter {
 	public void onTestFailure(ITestResult tr) {
 		super.onTestFailure(tr);
 		try {
-			threadLocal.get().stopRecording();
+            VideoRecorder recorder = threadLocal.get();
+            if (recorder != null) {
+                recorder.stopRecording();
+            }
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

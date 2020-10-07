@@ -2,7 +2,7 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
 
 
-<suite name="主流程" parallel="classes" thread-count="3" preserve-order="true">
+<suite name="主流程" parallel="classes" thread-count="10" preserve-order="true">
 
 <!--    <listeners>-->
 <!--        <listener class-name="TestngListenerDemo"/>-->
