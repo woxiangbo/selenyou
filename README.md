@@ -39,7 +39,7 @@ public class Demo{
 if Test passed, no need screen video
 if Test failed, then the screen video will be saved in `C:\video` with format `*.avi`, certainly, the place of video could be declared obviously:
 ```
-@Video("c:\\a\\b\\c\\anyFolderYouWant")
+@Video(store = "c:\\a\\b\\c\\anyFolderYouWant")
 ```
 
 
