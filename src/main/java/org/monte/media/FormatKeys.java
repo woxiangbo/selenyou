@@ -19,15 +19,6 @@ import org.monte.media.math.Rational;
  * @version $Id: FormatKeys.java 299 2013-01-03 07:40:18Z werner $
  */
 public class FormatKeys {
-    public static enum MediaType {
-        AUDIO,
-        VIDEO,
-        MIDI,
-        TEXT,
-        META,
-        FILE
-    }
-
     /**
      * The media MediaTypeKey.
      */
@@ -36,7 +27,6 @@ public class FormatKeys {
      * The EncodingKey.
      */
     public final static FormatKey<String> EncodingKey = new FormatKey<String>("encoding", String.class);
-
     //
     public final static String MIME_AVI = "video/avi";
     public final static String MIME_QUICKTIME = "video/quicktime";
@@ -52,11 +42,19 @@ public class FormatKeys {
      * The number of frames per second.
      */
     public final static FormatKey<Rational> FrameRateKey = new FormatKey<Rational>("frameRate", Rational.class);
-
     /**
      * The interval between key frames.
      * If this value is not specified, most codecs will use {@code FrameRateKey}
      * as a hint and try to produce one key frame per second.
      */
     public final static FormatKey<Integer> KeyFrameIntervalKey = new FormatKey<Integer>("keyFrameInterval", Integer.class);
+
+    public enum MediaType {
+        AUDIO,
+        VIDEO,
+        MIDI,
+        TEXT,
+        META,
+        FILE
+    }
 }

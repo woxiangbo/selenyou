@@ -10,19 +10,13 @@
  */
 package org.monte.media;
 
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.DataBufferByte;
-import java.awt.image.DataBufferInt;
-import java.awt.image.DataBufferShort;
-import java.awt.image.DataBufferUShort;
-import java.awt.image.DirectColorModel;
-import java.awt.image.WritableRaster;
-import java.io.IOException;
 import javax.imageio.stream.ImageOutputStream;
+import java.awt.*;
+import java.awt.image.*;
+import java.io.IOException;
 
-import static org.monte.media.VideoFormatKeys.*;
+import static org.monte.media.VideoFormatKeys.HeightKey;
+import static org.monte.media.VideoFormatKeys.WidthKey;
 
 /**
  * {@code AbstractVideoCodec}.
@@ -33,9 +27,20 @@ import static org.monte.media.VideoFormatKeys.*;
 public abstract class AbstractVideoCodec extends AbstractCodec {
 
     private BufferedImage imgConverter;
+    private byte[] byteBuf = new byte[4];
 
     public AbstractVideoCodec(Format[] supportedInputFormats, Format[] supportedOutputFormats) {
         super(supportedInputFormats, supportedOutputFormats);
+    }
+
+    /**
+     * Copies a buffered image.
+     */
+    protected static BufferedImage copyImage(BufferedImage img) {
+        ColorModel cm = img.getColorModel();
+        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+        WritableRaster raster = img.copyData(null);
+        return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
     }
 
     /**
@@ -118,7 +123,6 @@ public abstract class AbstractVideoCodec extends AbstractCodec {
         return null;
     }
 
-
     /**
      * Gets 24-bit RGB pixels from a buffer. Returns null if conversion failed.
      */
@@ -177,8 +181,6 @@ public abstract class AbstractVideoCodec extends AbstractCodec {
         return null;
     }
 
-    private byte[] byteBuf = new byte[4];
-
     protected void writeInt24(ImageOutputStream out, int v) throws IOException {
         byteBuf[0] = (byte) (v >>> 16);
         byteBuf[1] = (byte) (v >>> 8);
@@ -229,15 +231,5 @@ public abstract class AbstractVideoCodec extends AbstractCodec {
         }
 
         out.write(b, 0, len * 3);
-    }
-
-    /**
-     * Copies a buffered image.
-     */
-    protected static BufferedImage copyImage(BufferedImage img) {
-        ColorModel cm = img.getColorModel();
-        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
-        WritableRaster raster = img.copyData(null);
-        return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
     }
 }

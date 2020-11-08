@@ -10,24 +10,23 @@
  */
 package org.monte.media.avi;
 
+import org.monte.media.AbstractVideoCodec;
+import org.monte.media.Buffer;
 import org.monte.media.Format;
 import org.monte.media.io.ByteArrayImageOutputStream;
 
 import javax.imageio.stream.ImageOutputStream;
-import java.awt.image.WritableRaster;
-import java.awt.Rectangle;
-
-import org.monte.media.AbstractVideoCodec;
-import org.monte.media.Buffer;
-
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 
-import static java.lang.Math.*;
+import static java.lang.Math.min;
+import static org.monte.media.BufferFlag.DISCARD;
+import static org.monte.media.BufferFlag.KEYFRAME;
 import static org.monte.media.VideoFormatKeys.*;
-import static org.monte.media.BufferFlag.*;
 
 /**
  * {@code RunLengthCodec} encodes a BufferedImage as a byte[] array.

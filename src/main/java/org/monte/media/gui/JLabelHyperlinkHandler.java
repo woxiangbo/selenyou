@@ -10,19 +10,14 @@
  */
 package org.monte.media.gui;
 
-import java.awt.Cursor;
-import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.util.ArrayList;
 import javax.accessibility.AccessibleText;
-import javax.swing.JLabel;
+import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.html.HTML;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
 
 /**
  * {@code JLabelHyperlinkHandler} makes HTML hyperlinks in a {@code JLabel}
@@ -55,6 +50,56 @@ import javax.swing.text.html.HTML;
  * @version $Id: JLabelHyperlinkHandler.java 299 2013-01-03 07:40:18Z werner $
  */
 public class JLabelHyperlinkHandler {
+
+    private JLabel label;
+    private Handler handler = new Handler();
+    private ArrayList<ActionListener> actionListeners = new ArrayList<ActionListener>();
+
+    public JLabelHyperlinkHandler() {
+        this(null, null);
+    }
+
+    public JLabelHyperlinkHandler(JLabel label, ActionListener l) {
+        setLabel(label);
+        if (l != null) {
+            addActionListener(l);
+        }
+    }
+
+    public JLabel getLabel() {
+        return label;
+    }
+
+    public void setLabel(JLabel newValue) {
+        if (label != null) {
+            label.removeMouseListener(handler);
+            label.removeMouseMotionListener(handler);
+            label.setCursor(Cursor.getDefaultCursor());
+        }
+        label = newValue;
+        if (label != null) {
+            label.addMouseListener(handler);
+            label.addMouseMotionListener(handler);
+        }
+    }
+
+    public void addActionListener(ActionListener l) {
+        if (l != null) {
+            actionListeners.add(l);
+        }
+    }
+
+    public void removeActionListener(ActionListener l) {
+        if (l != null) {
+            actionListeners.remove(l);
+        }
+    }
+
+    private void fireActionPerformed(ActionEvent evt) {
+        for (ActionListener l : actionListeners) {
+            l.actionPerformed(evt);
+        }
+    }
 
     private class Handler implements MouseListener, MouseMotionListener {
 
@@ -106,56 +151,6 @@ public class JLabelHyperlinkHandler {
             } else {
                 label.setCursor(Cursor.getDefaultCursor());
             }
-        }
-    }
-
-    private JLabel label;
-    private Handler handler = new Handler();
-    private ArrayList<ActionListener> actionListeners = new ArrayList<ActionListener>();
-
-    public JLabelHyperlinkHandler() {
-        this(null, null);
-    }
-
-    public JLabelHyperlinkHandler(JLabel label, ActionListener l) {
-        setLabel(label);
-        if (l != null) {
-            addActionListener(l);
-        }
-    }
-
-    public void setLabel(JLabel newValue) {
-        if (label != null) {
-            label.removeMouseListener(handler);
-            label.removeMouseMotionListener(handler);
-            label.setCursor(Cursor.getDefaultCursor());
-        }
-        label = newValue;
-        if (label != null) {
-            label.addMouseListener(handler);
-            label.addMouseMotionListener(handler);
-        }
-    }
-
-    public JLabel getLabel() {
-        return label;
-    }
-
-    public void addActionListener(ActionListener l) {
-        if (l != null) {
-            actionListeners.add(l);
-        }
-    }
-
-    public void removeActionListener(ActionListener l) {
-        if (l != null) {
-            actionListeners.remove(l);
-        }
-    }
-
-    private void fireActionPerformed(ActionEvent evt) {
-        for (ActionListener l : actionListeners) {
-            l.actionPerformed(evt);
         }
     }
 }

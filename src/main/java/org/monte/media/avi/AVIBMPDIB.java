@@ -12,13 +12,13 @@ package org.monte.media.avi;
 
 import org.monte.media.io.ImageInputStreamAdapter;
 
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.MemoryCacheImageInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
-import java.util.*;
-import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.MemoryCacheImageInputStream;
+import java.util.Vector;
 
 /**
  * This class defines the JPEG Huffman table, which is omitted in AVI MJPEG

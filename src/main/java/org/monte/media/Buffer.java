@@ -4,16 +4,14 @@
  */
 package org.monte.media;
 
+import org.monte.media.math.Rational;
+import org.monte.media.util.Methods;
+
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.monte.media.math.Rational;
-import org.monte.media.util.Methods;
 
 /**
  * A {@code Buffer} carries media data from one media processing unit to another.
@@ -24,13 +22,13 @@ import org.monte.media.util.Methods;
 public class Buffer {
 
     /**
-     * A flag mask that describes the boolean attributes for this buffer.
-     */
-    public EnumSet<BufferFlag> flags = EnumSet.noneOf(BufferFlag.class);
-    /**
      * Values which are not specified must have this value.
      */
     public static final int NOT_SPECIFIED = -1;
+    /**
+     * A flag mask that describes the boolean attributes for this buffer.
+     */
+    public EnumSet<BufferFlag> flags = EnumSet.noneOf(BufferFlag.class);
     /**
      * The track number.
      * This can be set to NOT_SPECIFIED or to a number &gt;= 0.
@@ -117,7 +115,7 @@ public class Buffer {
             if (!(into instanceof byte[]) || ((byte[]) into).length < b.length) {
                 into = new byte[b.length];
             }
-            System.arraycopy(b, 0, (byte[]) into, 0, b.length);
+            System.arraycopy(b, 0, into, 0, b.length);
         } else if (from instanceof BufferedImage) {
             // FIXME - Try to reuse BufferedImage in output!
             BufferedImage img = (BufferedImage) from;

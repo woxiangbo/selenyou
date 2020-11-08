@@ -11,7 +11,9 @@
 
 package org.monte.media.beans;
 
-import javax.swing.event.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.EventListenerList;
 
 /**
  * Abstract superclass of models that fire state change

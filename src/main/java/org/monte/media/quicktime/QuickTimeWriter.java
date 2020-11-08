@@ -10,21 +10,27 @@
  */
 package org.monte.media.quicktime;
 
-import org.monte.media.Registry;
-import org.monte.media.Format;
-import org.monte.media.Codec;
-import org.monte.media.Buffer;
-import org.monte.media.MovieWriter;
+import org.monte.media.*;
 import org.monte.media.math.Rational;
 
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteOrder;
-import javax.imageio.stream.*;
 
-import static org.monte.media.VideoFormatKeys.*;
 import static org.monte.media.AudioFormatKeys.*;
-import static org.monte.media.BufferFlag.*;
+import static org.monte.media.BufferFlag.DISCARD;
+import static org.monte.media.BufferFlag.KEYFRAME;
+import static org.monte.media.VideoFormatKeys.EncodingKey;
+import static org.monte.media.VideoFormatKeys.FrameRateKey;
+import static org.monte.media.VideoFormatKeys.MIME_JAVA;
+import static org.monte.media.VideoFormatKeys.MIME_QUICKTIME;
+import static org.monte.media.VideoFormatKeys.MediaType;
+import static org.monte.media.VideoFormatKeys.MediaTypeKey;
+import static org.monte.media.VideoFormatKeys.MimeTypeKey;
+import static org.monte.media.VideoFormatKeys.*;
 
 /**
  * Supports writing of time-based video and audio data into a QuickTime movie
@@ -384,7 +390,7 @@ public class QuickTimeWriter extends QuickTimeOutputStream implements MovieWrite
         String enc = fmt.get(EncodingKey);
         if (tr.codec != null) {
             if (fmt.get(MediaTypeKey) == MediaType.VIDEO) {
-                Format vf = (Format) fmt;
+                Format vf = fmt;
                 tr.codec.setInputFormat(fmt.prepend(
                         MimeTypeKey, MIME_JAVA, EncodingKey, ENCODING_BUFFERED_IMAGE,
                         DataClassKey, BufferedImage.class));
@@ -398,7 +404,7 @@ public class QuickTimeWriter extends QuickTimeOutputStream implements MovieWrite
                 }
                 //tr.codec.setQuality(tr.videoQuality);
             } else {
-                Format vf = (Format) fmt;
+                Format vf = fmt;
                 tr.codec.setInputFormat(fmt.prepend(
                         MimeTypeKey, MIME_JAVA, EncodingKey, fmt.containsKey(SignedKey) && fmt.get(SignedKey) ? ENCODING_PCM_SIGNED : ENCODING_PCM_UNSIGNED,
                         DataClassKey, byte[].class));
@@ -449,7 +455,7 @@ public class QuickTimeWriter extends QuickTimeOutputStream implements MovieWrite
                 outBuf = buf;
             } else {
                 outBuf = tr.outputBuffer;
-                boolean isSync = tr.syncInterval == 0 ? false : tr.sampleCount % tr.syncInterval == 0;
+                boolean isSync = tr.syncInterval != 0 && tr.sampleCount % tr.syncInterval == 0;
                 buf.setFlag(KEYFRAME, isSync);
                 if (tr.codec == null) {
                     createCodec(track);
@@ -534,7 +540,7 @@ public class QuickTimeWriter extends QuickTimeOutputStream implements MovieWrite
                 vt.outputBuffer = new Buffer();
             }
 
-            boolean isSync = vt.syncInterval == 0 ? false : vt.sampleCount % vt.syncInterval == 0;
+            boolean isSync = vt.syncInterval != 0 && vt.sampleCount % vt.syncInterval == 0;
 
             Buffer inputBuffer = new Buffer();
             inputBuffer.setFlag(KEYFRAME, isSync);

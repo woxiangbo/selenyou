@@ -10,12 +10,10 @@
  */
 package org.monte.screenrecorder;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.Timer;
 
 /**
  * JAudioMonitor.
@@ -26,18 +24,8 @@ import javax.swing.Timer;
 public class JAudioMonitor extends javax.swing.JPanel {
     private Timer timer;
     private Color semiTransparent = new Color(0x40ffffff, true);
-
-    private class Handler implements ActionListener {
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            repaint();
-        }
-    }
-
     private Handler handler = new Handler();
     private ScreenRecorder recorder;
-
     /**
      * Creates new form JAudioMonitor
      */
@@ -106,6 +94,14 @@ public class JAudioMonitor extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
     }// </editor-fold>//GEN-END:initComponents
+
+    private class Handler implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            repaint();
+        }
+    }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
 }

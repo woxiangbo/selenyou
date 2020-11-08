@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-import static java.lang.Math.*;
+import static java.lang.Math.max;
 
 /**
  * {@code SeekableByteArrayOutputStream}.
@@ -85,7 +85,7 @@ public class SeekableByteArrayOutputStream extends ByteArrayOutputStream {
      * @param len the number of bytes to write.
      */
     @Override
-    public synchronized void write(byte b[], int off, int len) {
+    public synchronized void write(byte[] b, int off, int len) {
         if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();

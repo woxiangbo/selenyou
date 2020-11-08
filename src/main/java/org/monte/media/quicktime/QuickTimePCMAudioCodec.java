@@ -10,14 +10,13 @@
  */
 package org.monte.media.quicktime;
 
-import org.monte.media.audio.*;
 import org.monte.media.Format;
+import org.monte.media.audio.PCMAudioCodec;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import static org.monte.media.FormatKeys.*;
 import static org.monte.media.AudioFormatKeys.*;
 
 /**
@@ -32,12 +31,10 @@ import static org.monte.media.AudioFormatKeys.*;
 public class QuickTimePCMAudioCodec extends PCMAudioCodec {
 
     private final static HashSet<String> signedEncodings = new HashSet<String>(
-            Arrays.asList(new String[]{
-                    ENCODING_PCM_SIGNED, ENCODING_QUICKTIME_TWOS_PCM, ENCODING_QUICKTIME_SOWT_PCM,
-                    ENCODING_QUICKTIME_IN24_PCM, ENCODING_QUICKTIME_IN32_PCM,}));
+            Arrays.asList(ENCODING_PCM_SIGNED, ENCODING_QUICKTIME_TWOS_PCM, ENCODING_QUICKTIME_SOWT_PCM,
+                    ENCODING_QUICKTIME_IN24_PCM, ENCODING_QUICKTIME_IN32_PCM));
     private final static HashSet<String> unsignedEncodings = new HashSet<String>(
-            Arrays.asList(new String[]{
-                    ENCODING_PCM_UNSIGNED, ENCODING_QUICKTIME_RAW_PCM}));
+            Arrays.asList(ENCODING_PCM_UNSIGNED, ENCODING_QUICKTIME_RAW_PCM));
 
     public QuickTimePCMAudioCodec() {
         super(new Format[]{

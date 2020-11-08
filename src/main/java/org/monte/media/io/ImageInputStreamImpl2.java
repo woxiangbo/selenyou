@@ -10,9 +10,9 @@
  */
 package org.monte.media.io;
 
+import javax.imageio.stream.ImageInputStreamImpl;
 import java.io.IOException;
 import java.nio.ByteOrder;
-import javax.imageio.stream.ImageInputStreamImpl;
 
 /**
  * {@code ImageInputStreamImpl2} fixes bugs in ImageInputStreamImpl.

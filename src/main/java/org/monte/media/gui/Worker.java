@@ -10,7 +10,7 @@
  */
 package org.monte.media.gui;
 
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
 /**
  * This is an abstract class that you can subclass to

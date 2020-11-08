@@ -8,30 +8,30 @@
  */
 package org.monte.media.avi;
 
-import java.util.EnumSet;
-
-import org.monte.media.math.Rational;
-import org.monte.media.Format;
-import org.monte.media.Codec;
-import org.monte.media.Buffer;
-import org.monte.media.MovieWriter;
-import org.monte.media.Registry;
+import org.monte.media.*;
 import org.monte.media.io.ByteArrayImageOutputStream;
+import org.monte.media.math.Rational;
 import org.monte.media.riff.RIFFParser;
 
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.awt.image.IndexColorModel;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import javax.imageio.stream.*;
+import java.util.EnumSet;
 
+import static org.monte.media.AudioFormatKeys.EncodingKey;
+import static org.monte.media.AudioFormatKeys.FrameRateKey;
+import static org.monte.media.AudioFormatKeys.MIME_AVI;
+import static org.monte.media.AudioFormatKeys.MediaType;
+import static org.monte.media.AudioFormatKeys.MediaTypeKey;
+import static org.monte.media.AudioFormatKeys.MimeTypeKey;
 import static org.monte.media.AudioFormatKeys.*;
+import static org.monte.media.BufferFlag.DISCARD;
+import static org.monte.media.BufferFlag.KEYFRAME;
 import static org.monte.media.VideoFormatKeys.*;
-
-import org.monte.media.BufferFlag;
-
-import static org.monte.media.BufferFlag.*;
 
 /**
  * Provides high-level support for encoding and writing audio and video samples
@@ -243,7 +243,7 @@ public class AVIWriter extends AVIOutputStream implements MovieWriter {
                 vt.outputBuffer = new Buffer();
             }
 
-            boolean isKeyframe = vt.syncInterval == 0 ? false : vt.samples.size() % vt.syncInterval == 0;
+            boolean isKeyframe = vt.syncInterval != 0 && vt.samples.size() % vt.syncInterval == 0;
 
             Buffer inputBuffer = new Buffer();
             inputBuffer.flags = (isKeyframe) ? EnumSet.of(KEYFRAME) : EnumSet.noneOf(BufferFlag.class);

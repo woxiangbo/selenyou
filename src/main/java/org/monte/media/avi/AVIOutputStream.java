@@ -8,24 +8,31 @@
  */
 package org.monte.media.avi;
 
-import java.awt.image.ColorModel;
-
-import org.monte.media.riff.RIFFChunk;
-import org.monte.media.math.Rational;
-
-import java.util.ArrayList;
-
 import org.monte.media.Format;
+import org.monte.media.math.Rational;
+import org.monte.media.riff.RIFFChunk;
 import org.monte.media.riff.RIFFParser;
 
-import java.awt.Dimension;
+import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageOutputStream;
+import java.awt.*;
+import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteOrder;
-import javax.imageio.stream.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
-import static java.lang.Math.*;
-import static org.monte.media.FormatKeys.*;
+import static java.lang.Math.max;
+import static org.monte.media.AudioFormatKeys.EncodingKey;
+import static org.monte.media.AudioFormatKeys.FrameRateKey;
+import static org.monte.media.AudioFormatKeys.MIME_AVI;
+import static org.monte.media.AudioFormatKeys.MediaType;
+import static org.monte.media.AudioFormatKeys.MediaTypeKey;
+import static org.monte.media.AudioFormatKeys.MimeTypeKey;
 import static org.monte.media.AudioFormatKeys.*;
 import static org.monte.media.VideoFormatKeys.*;
 
@@ -48,14 +55,6 @@ import static org.monte.media.VideoFormatKeys.*;
 public class AVIOutputStream extends AbstractAVIStream {
 
     /**
-     * The states of the movie output stream.
-     */
-    protected static enum States {
-
-        STARTED, FINISHED, CLOSED;
-    }
-
-    /**
      * The current state of the movie output stream.
      */
     protected States state = States.FINISHED;
@@ -72,7 +71,6 @@ public class AVIOutputStream extends AbstractAVIStream {
      */
     protected FixedSizeDataChunk avihChunk;
     ArrayList<Sample> idx1 = new ArrayList<Sample>();
-
     /**
      * Creates a new instance.
      *
@@ -661,7 +659,7 @@ public class AVIOutputStream extends AbstractAVIStream {
             }
 
             if (tr.name != null) {
-                byte[] data = (tr.name + "\u0000").getBytes("ASCII");
+                byte[] data = (tr.name + "\u0000").getBytes(StandardCharsets.US_ASCII);
                 DataChunk d = new DataChunk(STRN_ID,
                         data.length);
                 ImageOutputStream dout = d.getOutputStream();
@@ -816,7 +814,7 @@ public class AVIOutputStream extends AbstractAVIStream {
             //                      could be used to create a list of frames for
             //                      editing.
             // 0x100   AVIF_ISINTERLEAVED Indicates the AVI file is interleaved.
-            // 0x800   AVIF_TRUST_CK_TYPE ???  
+            // 0x800   AVIF_TRUST_CK_TYPE ???
             // 0x1000  AVIF_WASCAPTUREFILE Indicates the AVI file is a specially
             //                      allocated file used for capturing real-time
             //                      video. Applications should warn the user before
@@ -1099,11 +1097,11 @@ public class AVIOutputStream extends AbstractAVIStream {
 
                 d.writeShort(0); //cbSize
                 // cbSize: Size, in bytes, of extra format information appended
-                // to the end of the WAVEFORMATEX structure. This information 
+                // to the end of the WAVEFORMATEX structure. This information
                 // can be used by non-PCM formats to store extra attributes for
-                // the wFormatTag. If no extra information is required by the 
+                // the wFormatTag. If no extra information is required by the
                 // wFormatTag, this member must be set to zero. If this value is
-                // 22, the format is most likely described using the 
+                // 22, the format is most likely described using the
                 // WAVEFORMATEXTENSIBLE structure, of which WAVEFORMATEX is the
                 // first member.
             }
@@ -1111,5 +1109,13 @@ public class AVIOutputStream extends AbstractAVIStream {
 
         // -----------------
         aviChunk.finish();
+    }
+
+    /**
+     * The states of the movie output stream.
+     */
+    protected enum States {
+
+        STARTED, FINISHED, CLOSED
     }
 }

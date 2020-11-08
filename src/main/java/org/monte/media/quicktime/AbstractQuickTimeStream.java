@@ -10,22 +10,20 @@
  */
 package org.monte.media.quicktime;
 
-import java.io.UnsupportedEncodingException;
-
 import org.monte.media.Buffer;
 import org.monte.media.Codec;
 import org.monte.media.Format;
 import org.monte.media.io.ImageOutputStreamAdapter;
 import org.monte.media.math.Rational;
 
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.IndexColorModel;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
-import javax.imageio.stream.ImageOutputStream;
 
-import static org.monte.media.FormatKeys.*;
+import static org.monte.media.FormatKeys.MediaType;
 
 /**
  * This is the base class for low-level QuickTime stream IO.
@@ -117,19 +115,28 @@ public class AbstractQuickTimeStream {
      * The transformation matrix for the entire movie.
      */
     protected double[] movieMatrix = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-
-    /**
-     * The states of the movie output stream.
-     */
-    protected static enum States {
-
-        REALIZED, STARTED, FINISHED, CLOSED;
-    }
-
     /**
      * The current state of the movie output stream.
      */
     protected States state = States.REALIZED;
+
+    protected static int typeToInt(String str) {
+        int value = ((str.charAt(0) & 0xff) << 24) |//
+                ((str.charAt(1) & 0xff) << 16) | //
+                ((str.charAt(2) & 0xff) << 8) | //
+                (str.charAt(3) & 0xff);
+        return value;
+    }
+
+    protected static String intToType(int id) {
+        char[] b = new char[4];
+
+        b[0] = (char) ((id >>> 24) & 0xff);
+        b[1] = (char) ((id >>> 16) & 0xff);
+        b[2] = (char) ((id >>> 8) & 0xff);
+        b[3] = (char) (id & 0xff);
+        return String.valueOf(b);
+    }
 
     /**
      * Gets the position relative to the beginning of the QuickTime stream. <p>
@@ -153,259 +160,12 @@ public class AbstractQuickTimeStream {
         out.seek(newPosition + streamOffset);
     }
 
-    protected static int typeToInt(String str) {
-        int value = ((str.charAt(0) & 0xff) << 24) |//
-                ((str.charAt(1) & 0xff) << 16) | //
-                ((str.charAt(2) & 0xff) << 8) | //
-                (str.charAt(3) & 0xff);
-        return value;
-    }
-
-    protected static String intToType(int id) {
-        char[] b = new char[4];
-
-        b[0] = (char) ((id >>> 24) & 0xff);
-        b[1] = (char) ((id >>> 16) & 0xff);
-        b[2] = (char) ((id >>> 8) & 0xff);
-        b[3] = (char) (id & 0xff);
-        return String.valueOf(b);
-    }
-
     /**
-     * Atom base class.
+     * The states of the movie output stream.
      */
-    protected abstract class Atom {
+    protected enum States {
 
-        /**
-         * The type of the atom. A String with the length of 4 characters.
-         */
-        protected String type;
-        /**
-         * The offset of the atom relative to the start of the
-         * ImageOutputStream.
-         */
-        protected long offset;
-
-        /**
-         * Creates a new Atom at the current position of the ImageOutputStream.
-         *
-         * @param type The type of the atom. A string with a length of 4
-         *             characters.
-         */
-        public Atom(String type, long offset) {
-            this.type = type;
-            this.offset = offset;
-        }
-
-        /**
-         * Writes the atom to the ImageOutputStream and disposes it.
-         */
-        public abstract void finish() throws IOException;
-
-        /**
-         * Returns the size of the atom including the size of the atom header.
-         *
-         * @return The size of the atom.
-         */
-        public abstract long size();
-    }
-
-    /**
-     * A CompositeAtom contains an ordered list of Atoms.
-     */
-    protected class CompositeAtom extends DataAtom {
-
-        protected LinkedList<Atom> children;
-
-        /**
-         * Creates a new CompositeAtom at the current position of the
-         * ImageOutputStream.
-         *
-         * @param type The type of the atom.
-         */
-        public CompositeAtom(String type) throws IOException {
-            super(type);
-            children = new LinkedList<Atom>();
-        }
-
-        public void add(Atom child) throws IOException {
-            if (children.size() > 0) {
-                children.getLast().finish();
-            }
-            children.add(child);
-        }
-
-        /**
-         * Writes the atom and all its children to the ImageOutputStream and
-         * disposes of all resources held by the atom.
-         *
-         * @throws IOException
-         */
-        @Override
-        public void finish() throws IOException {
-            if (!finished) {
-                if (size() > 0xffffffffL) {
-                    throw new IOException("CompositeAtom \"" + type + "\" is too large: " + size());
-                }
-
-                long pointer = getRelativeStreamPosition();
-                seekRelative(offset);
-
-                DataAtomOutputStream headerData = new DataAtomOutputStream(new ImageOutputStreamAdapter(out));
-                headerData.writeInt((int) size());
-                headerData.writeType(type);
-                for (Atom child : children) {
-                    child.finish();
-                }
-                seekRelative(pointer);
-                finished = true;
-            }
-        }
-
-        @Override
-        public long size() {
-            long length = 8 + data.size();
-            for (Atom child : children) {
-                length += child.size();
-            }
-            return length;
-        }
-    }
-
-    /**
-     * Data Atom.
-     */
-    protected class DataAtom extends Atom {
-
-        protected DataAtomOutputStream data;
-        protected boolean finished;
-
-        /**
-         * Creates a new DataAtom at the current position of the
-         * ImageOutputStream.
-         *
-         * @param type The type name of the atom.
-         */
-        public DataAtom(String type) throws IOException {
-            super(type, getRelativeStreamPosition());
-            out.writeLong(0); // make room for the atom header
-            data = new DataAtomOutputStream(new ImageOutputStreamAdapter(out));
-        }
-
-        public DataAtomOutputStream getOutputStream() {
-            if (finished) {
-                throw new IllegalStateException("DataAtom is finished");
-            }
-            return data;
-        }
-
-        /**
-         * Returns the offset of this atom to the beginning of the random access
-         * file
-         */
-        public long getOffset() {
-            return offset;
-        }
-
-        @Override
-        public void finish() throws IOException {
-            if (!finished) {
-                long sizeBefore = size();
-
-                if (size() > 0xffffffffL) {
-                    throw new IOException("DataAtom \"" + type + "\" is too large: " + size());
-                }
-
-                long pointer = getRelativeStreamPosition();
-                seekRelative(offset);
-
-                DataAtomOutputStream headerData = new DataAtomOutputStream(new ImageOutputStreamAdapter(out));
-                headerData.writeUInt(size());
-                headerData.writeType(type);
-                seekRelative(pointer);
-                finished = true;
-                long sizeAfter = size();
-                if (sizeBefore != sizeAfter) {
-                    System.err.println("size mismatch " + sizeBefore + ".." + sizeAfter);
-                }
-            }
-        }
-
-        @Override
-        public long size() {
-            return 8 + data.size();
-        }
-    }
-
-    /**
-     * WideDataAtom can grow larger then 4 gigabytes.
-     */
-    protected class WideDataAtom extends Atom {
-
-        protected DataAtomOutputStream data;
-        protected boolean finished;
-
-        /**
-         * Creates a new DataAtom at the current position of the
-         * ImageOutputStream.
-         *
-         * @param type The type of the atom.
-         */
-        public WideDataAtom(String type) throws IOException {
-            super(type, getRelativeStreamPosition());
-            out.writeLong(0); // make room for the atom header
-            out.writeLong(0); // make room for the atom header
-            data = new DataAtomOutputStream(new ImageOutputStreamAdapter(out)) {
-                @Override
-                public void flush() throws IOException {
-                    // DO NOT FLUSH UNDERLYING STREAM!
-                }
-            };
-        }
-
-        public DataAtomOutputStream getOutputStream() {
-            if (finished) {
-                throw new IllegalStateException("Atom is finished");
-            }
-            return data;
-        }
-
-        /**
-         * Returns the offset of this atom to the beginning of the random access
-         * file
-         */
-        public long getOffset() {
-            return offset;
-        }
-
-        @Override
-        public void finish() throws IOException {
-            if (!finished) {
-                long pointer = getRelativeStreamPosition();
-                seekRelative(offset);
-
-                DataAtomOutputStream headerData = new DataAtomOutputStream(new ImageOutputStreamAdapter(out));
-                long finishedSize = size();
-                if (finishedSize <= 0xffffffffL) {
-                    headerData.writeUInt(8);
-                    headerData.writeType("wide");
-                    headerData.writeUInt(finishedSize - 8);
-                    headerData.writeType(type);
-                } else {
-                    headerData.writeInt(1); // special value for extended size atoms
-                    headerData.writeType(type);
-                    headerData.writeLong(finishedSize - 8);
-                }
-
-                seekRelative(pointer);
-                finished = true;
-            }
-        }
-
-        @Override
-        public long size() {
-            return 16 + data.size();
-        }
+        REALIZED, STARTED, FINISHED, CLOSED
     }
 
     /**
@@ -413,10 +173,10 @@ public class AbstractQuickTimeStream {
      */
     protected abstract static class Group {
 
+        protected final static long maxSampleCount = Integer.MAX_VALUE;
         protected Sample firstSample;
         protected Sample lastSample;
         protected long sampleCount;
-        protected final static long maxSampleCount = Integer.MAX_VALUE;
 
         protected Group(Sample firstSample) {
             this.firstSample = this.lastSample = firstSample;
@@ -654,6 +414,324 @@ public class AbstractQuickTimeStream {
          */
         public long getChunkOffset() {
             return firstSample.offset;
+        }
+    }
+
+    /**
+     * An {@code Edit} define the portions of the media that are to be used to
+     * build up a track for a movie. The edits themselves are stored in an edit
+     * list table, which consists of time offset and duration values for each
+     * segment. <p> In the absence of an edit list, the presentation of the
+     * track starts immediately. An empty edit is used to offset the start time
+     * of a track.
+     */
+    public static class Edit {
+
+        /**
+         * A 32-bit integer that specifies the duration of this edit segment in
+         * units of the movie's time scale.
+         */
+        public int trackDuration;
+        /**
+         * A 32-bit integer containing the start time within the media of this
+         * edit segment (in media time scale units). If this field is set to -1,
+         * it is an empty edit. The last edit in a track should never be an
+         * empty edit. Any differece between the movie's duration and the
+         * track's duration is expressed as an implicit empty edit.
+         */
+        public int mediaTime;
+        /**
+         * A 32-bit fixed-point number (16.16) that specifies the relative rate
+         * at which to play the media corresponding to this edit segment. This
+         * rate value cannot be 0 or negative.
+         */
+        public int mediaRate;
+
+        /**
+         * Creates an edit.
+         *
+         * @param trackDuration Duration of this edit in the movie's time scale.
+         * @param mediaTime     Start time of this edit in the media's time scale.
+         *                      Specify -1 for an empty edit. The last edit in a track should never
+         *                      be an empty edit.
+         * @param mediaRate     The relative rate at which to play this edit.
+         */
+        public Edit(int trackDuration, int mediaTime, double mediaRate) {
+            if (trackDuration < 0) {
+                throw new IllegalArgumentException("trackDuration must not be < 0:" + trackDuration);
+            }
+            if (mediaTime < -1) {
+                throw new IllegalArgumentException("mediaTime must not be < -1:" + mediaTime);
+            }
+            if (mediaRate <= 0) {
+                throw new IllegalArgumentException("mediaRate must not be <= 0:" + mediaRate);
+            }
+            this.trackDuration = trackDuration;
+            this.mediaTime = mediaTime;
+            this.mediaRate = (int) (mediaRate * (1 << 16));
+        }
+
+        /**
+         * Creates an edit. <p> Use this constructor only if you want to compute
+         * the fixed point media rate by yourself.
+         *
+         * @param trackDuration Duration of this edit in the movie's time scale.
+         * @param mediaTime     Start time of this edit in the media's time scale.
+         *                      Specify -1 for an empty edit. The last edit in a track should never
+         *                      be an empty edit.
+         * @param mediaRate     The relative rate at which to play this edit given
+         *                      as a 16.16 fixed point value.
+         */
+        public Edit(int trackDuration, int mediaTime, int mediaRate) {
+            if (trackDuration < 0) {
+                throw new IllegalArgumentException("trackDuration must not be < 0:" + trackDuration);
+            }
+            if (mediaTime < -1) {
+                throw new IllegalArgumentException("mediaTime must not be < -1:" + mediaTime);
+            }
+            if (mediaRate <= 0) {
+                throw new IllegalArgumentException("mediaRate must not be <= 0:" + mediaRate);
+            }
+            this.trackDuration = trackDuration;
+            this.mediaTime = mediaTime;
+            this.mediaRate = mediaRate;
+        }
+    }
+
+    /**
+     * Atom base class.
+     */
+    protected abstract class Atom {
+
+        /**
+         * The type of the atom. A String with the length of 4 characters.
+         */
+        protected String type;
+        /**
+         * The offset of the atom relative to the start of the
+         * ImageOutputStream.
+         */
+        protected long offset;
+
+        /**
+         * Creates a new Atom at the current position of the ImageOutputStream.
+         *
+         * @param type The type of the atom. A string with a length of 4
+         *             characters.
+         */
+        public Atom(String type, long offset) {
+            this.type = type;
+            this.offset = offset;
+        }
+
+        /**
+         * Writes the atom to the ImageOutputStream and disposes it.
+         */
+        public abstract void finish() throws IOException;
+
+        /**
+         * Returns the size of the atom including the size of the atom header.
+         *
+         * @return The size of the atom.
+         */
+        public abstract long size();
+    }
+
+    /**
+     * A CompositeAtom contains an ordered list of Atoms.
+     */
+    protected class CompositeAtom extends DataAtom {
+
+        protected LinkedList<Atom> children;
+
+        /**
+         * Creates a new CompositeAtom at the current position of the
+         * ImageOutputStream.
+         *
+         * @param type The type of the atom.
+         */
+        public CompositeAtom(String type) throws IOException {
+            super(type);
+            children = new LinkedList<Atom>();
+        }
+
+        public void add(Atom child) throws IOException {
+            if (children.size() > 0) {
+                children.getLast().finish();
+            }
+            children.add(child);
+        }
+
+        /**
+         * Writes the atom and all its children to the ImageOutputStream and
+         * disposes of all resources held by the atom.
+         *
+         * @throws IOException
+         */
+        @Override
+        public void finish() throws IOException {
+            if (!finished) {
+                if (size() > 0xffffffffL) {
+                    throw new IOException("CompositeAtom \"" + type + "\" is too large: " + size());
+                }
+
+                long pointer = getRelativeStreamPosition();
+                seekRelative(offset);
+
+                DataAtomOutputStream headerData = new DataAtomOutputStream(new ImageOutputStreamAdapter(out));
+                headerData.writeInt((int) size());
+                headerData.writeType(type);
+                for (Atom child : children) {
+                    child.finish();
+                }
+                seekRelative(pointer);
+                finished = true;
+            }
+        }
+
+        @Override
+        public long size() {
+            long length = 8 + data.size();
+            for (Atom child : children) {
+                length += child.size();
+            }
+            return length;
+        }
+    }
+
+    /**
+     * Data Atom.
+     */
+    protected class DataAtom extends Atom {
+
+        protected DataAtomOutputStream data;
+        protected boolean finished;
+
+        /**
+         * Creates a new DataAtom at the current position of the
+         * ImageOutputStream.
+         *
+         * @param type The type name of the atom.
+         */
+        public DataAtom(String type) throws IOException {
+            super(type, getRelativeStreamPosition());
+            out.writeLong(0); // make room for the atom header
+            data = new DataAtomOutputStream(new ImageOutputStreamAdapter(out));
+        }
+
+        public DataAtomOutputStream getOutputStream() {
+            if (finished) {
+                throw new IllegalStateException("DataAtom is finished");
+            }
+            return data;
+        }
+
+        /**
+         * Returns the offset of this atom to the beginning of the random access
+         * file
+         */
+        public long getOffset() {
+            return offset;
+        }
+
+        @Override
+        public void finish() throws IOException {
+            if (!finished) {
+                long sizeBefore = size();
+
+                if (size() > 0xffffffffL) {
+                    throw new IOException("DataAtom \"" + type + "\" is too large: " + size());
+                }
+
+                long pointer = getRelativeStreamPosition();
+                seekRelative(offset);
+
+                DataAtomOutputStream headerData = new DataAtomOutputStream(new ImageOutputStreamAdapter(out));
+                headerData.writeUInt(size());
+                headerData.writeType(type);
+                seekRelative(pointer);
+                finished = true;
+                long sizeAfter = size();
+                if (sizeBefore != sizeAfter) {
+                    System.err.println("size mismatch " + sizeBefore + ".." + sizeAfter);
+                }
+            }
+        }
+
+        @Override
+        public long size() {
+            return 8 + data.size();
+        }
+    }
+
+    /**
+     * WideDataAtom can grow larger then 4 gigabytes.
+     */
+    protected class WideDataAtom extends Atom {
+
+        protected DataAtomOutputStream data;
+        protected boolean finished;
+
+        /**
+         * Creates a new DataAtom at the current position of the
+         * ImageOutputStream.
+         *
+         * @param type The type of the atom.
+         */
+        public WideDataAtom(String type) throws IOException {
+            super(type, getRelativeStreamPosition());
+            out.writeLong(0); // make room for the atom header
+            out.writeLong(0); // make room for the atom header
+            data = new DataAtomOutputStream(new ImageOutputStreamAdapter(out)) {
+                @Override
+                public void flush() throws IOException {
+                    // DO NOT FLUSH UNDERLYING STREAM!
+                }
+            };
+        }
+
+        public DataAtomOutputStream getOutputStream() {
+            if (finished) {
+                throw new IllegalStateException("Atom is finished");
+            }
+            return data;
+        }
+
+        /**
+         * Returns the offset of this atom to the beginning of the random access
+         * file
+         */
+        public long getOffset() {
+            return offset;
+        }
+
+        @Override
+        public void finish() throws IOException {
+            if (!finished) {
+                long pointer = getRelativeStreamPosition();
+                seekRelative(offset);
+
+                DataAtomOutputStream headerData = new DataAtomOutputStream(new ImageOutputStreamAdapter(out));
+                long finishedSize = size();
+                if (finishedSize <= 0xffffffffL) {
+                    headerData.writeUInt(8);
+                    headerData.writeType("wide");
+                    headerData.writeUInt(finishedSize - 8);
+                    headerData.writeType(type);
+                } else {
+                    headerData.writeInt(1); // special value for extended size atoms
+                    headerData.writeType(type);
+                    headerData.writeLong(finishedSize - 8);
+                }
+
+                seekRelative(pointer);
+                finished = true;
+            }
+        }
+
+        @Override
+        public long size() {
+            return 16 + data.size();
         }
     }
 
@@ -985,7 +1063,7 @@ public class AbstractQuickTimeStream {
              int numberOfEntries;
              editListTable editListTable[numberOfEntries];
              } editListAtom;
-            
+
              typedef struct {
              int trackDuration;
              int mediaTime;
@@ -1218,11 +1296,11 @@ public class AbstractQuickTimeStream {
              int numberOfEntries;
              dataReferenceEntry dataReference[numberOfEntries];
              } dataReferenceAtom;
-            
+
              set {
              dataRefSelfReference=1 // I am not shure if this is the correct value for this flag
              } drefEntryFlags;
-            
+
              typedef struct {
              int size;
              magic type;
@@ -1304,7 +1382,7 @@ public class AbstractQuickTimeStream {
              int numberOfEntries;
              timeToSampleTable timeToSampleTable[numberOfEntries];
              } timeToSampleAtom;
-            
+
              typedef struct {
              int sampleCount;
              int sampleDuration;
@@ -1345,7 +1423,7 @@ public class AbstractQuickTimeStream {
              int numberOfEntries;
              sampleToChunkTable sampleToChunkTable[numberOfEntries];
              } sampleToChunkAtom;
-            
+
              typedef struct {
              int firstChunk;
              int samplesPerChunk;
@@ -1412,7 +1490,7 @@ public class AbstractQuickTimeStream {
                  int numberOfEntries;
                  syncSampleTable syncSampleTable[numberOfEntries];
                  } syncSampleAtom;
-                
+
                  typedef struct {
                  int number;
                  } syncSampleTable;
@@ -1454,7 +1532,7 @@ public class AbstractQuickTimeStream {
              int numberOfEntries;
              sampleSizeTable sampleSizeTable[numberOfEntries];
              } sampleSizeAtom;
-            
+
              typedef struct {
              int size;
              } sampleSizeTable;
@@ -1528,7 +1606,7 @@ public class AbstractQuickTimeStream {
                  int numberOfEntries;
                  chunkOffsetTable chunkOffsetTable[numberOfEntries];
                  } chunkOffsetAtom;
-                
+
                  typedef struct {
                  int offset;
                  } chunkOffsetTable;
@@ -1563,7 +1641,7 @@ public class AbstractQuickTimeStream {
                  int numberOfEntries;
                  chunkOffsetTable chunkOffset64Table[numberOfEntries];
                  } chunkOffset64Atom;
-                
+
                  typedef struct {
                  long offset;
                  } chunkOffset64Table;
@@ -1681,7 +1759,7 @@ public class AbstractQuickTimeStream {
              int numberOfEntries;
              sampleDescriptionEntry sampleDescriptionTable[numberOfEntries];
              } sampleDescriptionAtom;
-            
+
              typedef struct {
              int size;
              magic type;
@@ -1956,7 +2034,7 @@ public class AbstractQuickTimeStream {
              int numberOfEntries;
              soundSampleDescriptionEntry sampleDescriptionTable[numberOfEntries];
              } soundSampleDescriptionAtom;
-            
+
              typedef struct {
              int size;
              magic type;
@@ -1964,7 +2042,7 @@ public class AbstractQuickTimeStream {
              short dataReferenceIndex;
              soundSampleDescription data;
              } soundSampleDescriptionEntry;
-            
+
              typedef struct {
              ushort version;
              ushort revisionLevel;
@@ -2092,87 +2170,6 @@ public class AbstractQuickTimeStream {
             // Extensions must be atom-based fields
             // ------------------------------------
             d.write(stsdExtensions);
-        }
-    }
-
-    /**
-     * An {@code Edit} define the portions of the media that are to be used to
-     * build up a track for a movie. The edits themselves are stored in an edit
-     * list table, which consists of time offset and duration values for each
-     * segment. <p> In the absence of an edit list, the presentation of the
-     * track starts immediately. An empty edit is used to offset the start time
-     * of a track.
-     */
-    public static class Edit {
-
-        /**
-         * A 32-bit integer that specifies the duration of this edit segment in
-         * units of the movie's time scale.
-         */
-        public int trackDuration;
-        /**
-         * A 32-bit integer containing the start time within the media of this
-         * edit segment (in media time scale units). If this field is set to -1,
-         * it is an empty edit. The last edit in a track should never be an
-         * empty edit. Any differece between the movie's duration and the
-         * track's duration is expressed as an implicit empty edit.
-         */
-        public int mediaTime;
-        /**
-         * A 32-bit fixed-point number (16.16) that specifies the relative rate
-         * at which to play the media corresponding to this edit segment. This
-         * rate value cannot be 0 or negative.
-         */
-        public int mediaRate;
-
-        /**
-         * Creates an edit.
-         *
-         * @param trackDuration Duration of this edit in the movie's time scale.
-         * @param mediaTime     Start time of this edit in the media's time scale.
-         *                      Specify -1 for an empty edit. The last edit in a track should never
-         *                      be an empty edit.
-         * @param mediaRate     The relative rate at which to play this edit.
-         */
-        public Edit(int trackDuration, int mediaTime, double mediaRate) {
-            if (trackDuration < 0) {
-                throw new IllegalArgumentException("trackDuration must not be < 0:" + trackDuration);
-            }
-            if (mediaTime < -1) {
-                throw new IllegalArgumentException("mediaTime must not be < -1:" + mediaTime);
-            }
-            if (mediaRate <= 0) {
-                throw new IllegalArgumentException("mediaRate must not be <= 0:" + mediaRate);
-            }
-            this.trackDuration = trackDuration;
-            this.mediaTime = mediaTime;
-            this.mediaRate = (int) (mediaRate * (1 << 16));
-        }
-
-        /**
-         * Creates an edit. <p> Use this constructor only if you want to compute
-         * the fixed point media rate by yourself.
-         *
-         * @param trackDuration Duration of this edit in the movie's time scale.
-         * @param mediaTime     Start time of this edit in the media's time scale.
-         *                      Specify -1 for an empty edit. The last edit in a track should never
-         *                      be an empty edit.
-         * @param mediaRate     The relative rate at which to play this edit given
-         *                      as a 16.16 fixed point value.
-         */
-        public Edit(int trackDuration, int mediaTime, int mediaRate) {
-            if (trackDuration < 0) {
-                throw new IllegalArgumentException("trackDuration must not be < 0:" + trackDuration);
-            }
-            if (mediaTime < -1) {
-                throw new IllegalArgumentException("mediaTime must not be < -1:" + mediaTime);
-            }
-            if (mediaRate <= 0) {
-                throw new IllegalArgumentException("mediaRate must not be <= 0:" + mediaRate);
-            }
-            this.trackDuration = trackDuration;
-            this.mediaTime = mediaTime;
-            this.mediaRate = mediaRate;
         }
     }
 }

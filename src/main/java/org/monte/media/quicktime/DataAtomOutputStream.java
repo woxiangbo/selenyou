@@ -8,10 +8,11 @@
  */
 package org.monte.media.quicktime;
 
+import javax.imageio.stream.ImageOutputStreamImpl;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import javax.imageio.stream.ImageOutputStreamImpl;
 
 /**
  * This output stream filter supports common data types used inside
@@ -22,13 +23,14 @@ import javax.imageio.stream.ImageOutputStreamImpl;
  */
 public class DataAtomOutputStream extends FilterOutputStream {
 
-    ImageOutputStreamImpl impl;
     protected static final long MAC_TIMESTAMP_EPOCH = new GregorianCalendar(1904, GregorianCalendar.JANUARY, 1).getTimeInMillis();
     /**
      * The number of bytes written to the data output stream so far.
      * If this counter overflows, it will be wrapped to Integer.MAX_VALUE.
      */
     protected long written;
+    ImageOutputStreamImpl impl;
+    private byte[] byteBuf = new byte[3];
 
     public DataAtomOutputStream(OutputStream out) {
         super(out);
@@ -45,7 +47,7 @@ public class DataAtomOutputStream extends FilterOutputStream {
         }
 
         try {
-            out.write(s.getBytes("ASCII"), 0, 4);
+            out.write(s.getBytes(StandardCharsets.US_ASCII), 0, 4);
             incCount(4);
         } catch (UnsupportedEncodingException e) {
             throw new InternalError(e.toString());
@@ -79,7 +81,7 @@ public class DataAtomOutputStream extends FilterOutputStream {
      * @see FilterOutputStream#out
      */
     @Override
-    public synchronized void write(byte b[], int off, int len)
+    public synchronized void write(byte[] b, int off, int len)
             throws IOException {
         out.write(b, off, len);
         incCount(len);
@@ -141,8 +143,8 @@ public class DataAtomOutputStream extends FilterOutputStream {
      * @throws IOException
      */
     public void writeShort(int v) throws IOException {
-        out.write((int) ((v >> 8) & 0xff));
-        out.write((int) ((v >>> 0) & 0xff));
+        out.write((v >> 8) & 0xff);
+        out.write((v >>> 0) & 0xff);
         incCount(2);
     }
 
@@ -308,8 +310,8 @@ public class DataAtomOutputStream extends FilterOutputStream {
     }
 
     public void writeUShort(int v) throws IOException {
-        out.write((int) ((v >> 8) & 0xff));
-        out.write((int) ((v >>> 0) & 0xff));
+        out.write((v >> 8) & 0xff);
+        out.write((v >>> 0) & 0xff);
         incCount(2);
     }
 
@@ -360,8 +362,6 @@ public class DataAtomOutputStream extends FilterOutputStream {
 
         write(b, 0, len * 4);
     }
-
-    private byte[] byteBuf = new byte[3];
 
     public void writeInt24(int v) throws IOException {
         byteBuf[0] = (byte) (v >>> 16);

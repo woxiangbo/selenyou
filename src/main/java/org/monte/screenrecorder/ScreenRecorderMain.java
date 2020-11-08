@@ -10,58 +10,42 @@
  */
 package org.monte.screenrecorder;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
-import org.monte.media.gui.datatransfer.DropFileTransferHandler;
-import org.monte.media.gui.JLabelHyperlinkHandler;
-
-import java.net.URISyntaxException;
-import java.net.URI;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.Point;
-import java.io.File;
-import java.awt.Dimension;
-import java.awt.GraphicsConfiguration;
-import java.awt.Rectangle;
-import javax.swing.UIManager;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.JComponent;
-import javax.swing.DefaultComboBoxModel;
-
 import org.monte.media.Format;
+import org.monte.media.gui.JLabelHyperlinkHandler;
 import org.monte.media.gui.Worker;
+import org.monte.media.gui.datatransfer.DropFileTransferHandler;
 import org.monte.media.math.Rational;
 
-import java.awt.AWTException;
-import java.awt.Desktop;
-import java.awt.Frame;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.prefs.Preferences;
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
+import javax.sound.sampled.*;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
+import java.util.Vector;
+import java.util.prefs.Preferences;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static org.monte.media.AudioFormatKeys.EncodingKey;
+import static org.monte.media.AudioFormatKeys.FrameRateKey;
+import static org.monte.media.AudioFormatKeys.KeyFrameIntervalKey;
+import static org.monte.media.AudioFormatKeys.MIME_AVI;
+import static org.monte.media.AudioFormatKeys.MIME_QUICKTIME;
+import static org.monte.media.AudioFormatKeys.MediaType;
+import static org.monte.media.AudioFormatKeys.MediaTypeKey;
+import static org.monte.media.AudioFormatKeys.MimeTypeKey;
 import static org.monte.media.AudioFormatKeys.*;
 import static org.monte.media.VideoFormatKeys.*;
-import static java.lang.Math.*;
-
-import java.nio.ByteOrder;
-import java.util.Vector;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.Mixer;
-import javax.sound.sampled.TargetDataLine;
 
 /**
  * ScreenRecorderMain.
@@ -70,17 +54,6 @@ import javax.sound.sampled.TargetDataLine;
  * @version $Id: ScreenRecorderMain.java 303 2013-01-03 07:43:37Z werner $
  */
 public class ScreenRecorderMain extends javax.swing.JFrame {
-
-    private class Handler implements ChangeListener {
-
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            ScreenRecorder r = screenRecorder;
-            if (r != null && r.getState() == ScreenRecorder.State.FAILED) {
-                recordingFailed();
-            }
-        }
-    }
 
     private Handler handler = new Handler();
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd 'at' HH.mm.ss");
@@ -96,115 +69,31 @@ public class ScreenRecorderMain extends javax.swing.JFrame {
     private double screenRate;
     private double mouseRate;
     private File movieFolder;
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JComboBox areaChoice;
+    private javax.swing.JLabel areaLabel;
+    private javax.swing.JComboBox audioRateChoice;
+    private javax.swing.JLabel audioRateLabel;
+    private javax.swing.JComboBox audioSourceChoice;
+    private javax.swing.JLabel audioSourceLabel;
 
-    private static class AudioRateItem {
-
-        private String title;
-        private int sampleRate;
-        private int bitsPerSample;
-
-        public AudioRateItem(String title, int sampleRate, int bitsPerSample) {
-            this.title = title;
-            this.sampleRate = sampleRate;
-            this.bitsPerSample = bitsPerSample;
-        }
-
-        @Override
-        public String toString() {
-            return title;
-        }
-    }
-
-    private static class AudioSourceItem {
-
-        private String title;
-        private Mixer.Info mixerInfo;
-        private boolean isEnabled;
-
-        public AudioSourceItem(String title, Mixer.Info mixerInfo) {
-            this(title, mixerInfo, true);
-        }
-
-        public AudioSourceItem(String title, Mixer.Info mixerInfo, boolean isEnabled) {
-            this.title = title;
-            this.mixerInfo = mixerInfo;
-            this.isEnabled = isEnabled;
-        }
-
-        @Override
-        public String toString() {
-            return title;
-        }
-    }
-
-    private static class AreaItem {
-
-        private String title;
-        /**
-         * Area or null for entire screen.
-         */
-        private Dimension inputDimension;
-        /**
-         * null if same value as input dimension.
-         */
-        private Dimension outputDimension;
-        /**
-         * SwingConstants.CENTER, .NORTH_WEST, SOUTH_WEST.
-         */
-        private int alignment;
-        private Point location;
-
-        public AreaItem(String title, Dimension dim, int alignment) {
-            this(title, dim, null, alignment, new Point(0, 0));
-        }
-
-        public AreaItem(String title, Dimension inputDim, Dimension outputDim, int alignment, Point location) {
-            this.title = title;
-            this.inputDimension = inputDim;
-            this.outputDimension = outputDim;
-            this.alignment = alignment;
-            this.location = location;
-        }
-
-        @Override
-        public String toString() {
-            return title;
-        }
-
-        public Rectangle getBounds(GraphicsConfiguration cfg) {
-            Rectangle areaRect = null;
-            if (inputDimension != null) {
-                areaRect = new Rectangle(0, 0, inputDimension.width, inputDimension.height);
-            }
-            outputDimension = outputDimension;
-            Rectangle screenBounds = cfg.getBounds();
-            if (areaRect == null) {
-                areaRect = (Rectangle) screenBounds.clone();
-            }
-            switch (alignment) {
-                case SwingConstants.CENTER:
-                    areaRect.x = screenBounds.x + (screenBounds.width - areaRect.width) / 2;
-                    areaRect.y = screenBounds.y + (screenBounds.height - areaRect.height) / 2;
-                    break;
-                case SwingConstants.NORTH_WEST:
-                    areaRect.x = screenBounds.x;
-                    areaRect.y = screenBounds.y;
-                    break;
-                case SwingConstants.SOUTH_WEST:
-                    areaRect.x = screenBounds.x;
-                    areaRect.y = screenBounds.y + screenBounds.height - areaRect.height;
-                    break;
-                default:
-                    break;
-            }
-            areaRect.translate(location.x, location.y);
-
-            areaRect = areaRect.intersection(screenBounds);
-            return areaRect;
-
-        }
-    }
-
+    // Code for dispatching events from components to event handlers.
+    private javax.swing.JComboBox colorsChoice;
+    private javax.swing.JLabel colorsLabel;
+    private javax.swing.JComboBox cursorChoice;
+    private javax.swing.JComboBox encodingChoice;
+    private javax.swing.JLabel encodingLabel;
+    private javax.swing.JComboBox formatChoice;
+    private javax.swing.JLabel formatLabel;
+    private javax.swing.JLabel infoLabel;
+    private javax.swing.JLabel mouseLabel;
+    private javax.swing.JSpinner mouseRateField;
+    private javax.swing.JLabel mouseRateLabel;
+    private javax.swing.JSpinner screenRateField;
+    private javax.swing.JLabel screenRateLabel;
+    private javax.swing.JButton selectAreaButton;
+    private javax.swing.JButton startStopButton;
+    private javax.swing.JLabel stateLabel;
     /**
      * Creates new form ScreenRecorderMain
      */
@@ -317,6 +206,47 @@ public class ScreenRecorderMain extends javax.swing.JFrame {
         getRootPane().setDefaultButton(startStopButton);
         updateEncodingChoice();
         pack();
+    }
+
+    private static Vector<AudioSourceItem> getAudioSources() {
+        Vector<AudioSourceItem> l = new Vector<AudioSourceItem>();
+
+        l.add(new AudioSourceItem("None", null, false));
+        l.add(new AudioSourceItem("Default Input", null, true));
+        Mixer.Info[] mixers = AudioSystem.getMixerInfo();
+        DataLine.Info lineInfo = new DataLine.Info(
+                TargetDataLine.class,
+                new AudioFormat(
+                        44100.0f,
+                        16,
+                        2,
+                        true,
+                        true));
+
+        for (Mixer.Info info : mixers) {
+            Mixer mixer = AudioSystem.getMixer(info);
+            if (mixer.isLineSupported(lineInfo)) {
+                l.add(new AudioSourceItem(info.getName(), info));
+            }
+        }
+        return l;
+    }
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                } catch (Exception e) {
+                    //ignore
+                }
+                new ScreenRecorderMain().setVisible(true);
+            }
+        });
     }
 
     /**
@@ -451,7 +381,7 @@ public class ScreenRecorderMain extends javax.swing.JFrame {
                                 .addContainerGap())
         );
 
-        layout.linkSize(SwingConstants.HORIZONTAL, new Component[]{audioRateChoice, colorsChoice, cursorChoice, formatChoice});
+        layout.linkSize(SwingConstants.HORIZONTAL, audioRateChoice, colorsChoice, cursorChoice, formatChoice);
 
         layout.setVerticalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -503,74 +433,6 @@ public class ScreenRecorderMain extends javax.swing.JFrame {
         );
 
         pack();
-    }
-
-    // Code for dispatching events from components to event handlers.
-
-    private class FormListener implements ActionListener, java.awt.event.WindowListener {
-        FormListener() {
-        }
-
-        public void actionPerformed(ActionEvent evt) {
-            if (evt.getSource() == formatChoice) {
-                ScreenRecorderMain.this.formatChoicePerformed(evt);
-            } else if (evt.getSource() == startStopButton) {
-                ScreenRecorderMain.this.startStopPerformed(evt);
-            } else if (evt.getSource() == selectAreaButton) {
-                ScreenRecorderMain.this.selectAreaPerformed(evt);
-            }
-        }
-
-        public void windowActivated(WindowEvent evt) {
-        }
-
-        public void windowClosed(WindowEvent evt) {
-        }
-
-        public void windowClosing(WindowEvent evt) {
-            if (evt.getSource() == ScreenRecorderMain.this) {
-                ScreenRecorderMain.this.formWindowClosing(evt);
-            }
-        }
-
-        public void windowDeactivated(WindowEvent evt) {
-        }
-
-        public void windowDeiconified(WindowEvent evt) {
-            if (evt.getSource() == ScreenRecorderMain.this) {
-                ScreenRecorderMain.this.formWindowDeiconified(evt);
-            }
-        }
-
-        public void windowIconified(WindowEvent evt) {
-        }
-
-        public void windowOpened(WindowEvent evt) {
-        }
-    }// </editor-fold>//GEN-END:initComponents
-
-    private static Vector<AudioSourceItem> getAudioSources() {
-        Vector<AudioSourceItem> l = new Vector<AudioSourceItem>();
-
-        l.add(new AudioSourceItem("None", null, false));
-        l.add(new AudioSourceItem("Default Input", null, true));
-        Mixer.Info[] mixers = AudioSystem.getMixerInfo();
-        DataLine.Info lineInfo = new DataLine.Info(
-                TargetDataLine.class,
-                new AudioFormat(
-                        44100.0f,
-                        16,
-                        2,
-                        true,
-                        true));
-
-        for (Mixer.Info info : mixers) {
-            Mixer mixer = AudioSystem.getMixer(info);
-            if (mixer.isLineSupported(lineInfo)) {
-                l.add(new AudioSourceItem(info.getName(), info));
-            }
-        }
-        return l;
     }
 
     private void updateValues() {
@@ -778,8 +640,8 @@ public class ScreenRecorderMain extends javax.swing.JFrame {
                 c.setEnabled(b);
             }
         }
-        ((JComponent) getContentPane()).invalidate();
-        ((JComponent) getContentPane()).revalidate();
+        getContentPane().invalidate();
+        getContentPane().revalidate();
     }
 
     private void stop() {
@@ -898,53 +760,173 @@ public class ScreenRecorderMain extends javax.swing.JFrame {
                 prefs.putInt("ScreenRecording.customAreaY", ai.location.y);
                 prefs.putInt("ScreenRecording.customAreaWidth", ai.inputDimension.width);
                 prefs.putInt("ScreenRecording.customAreaHeight", ai.inputDimension.height);
-                ((JComponent) getContentPane()).invalidate();
-                ((JComponent) getContentPane()).revalidate();
+                getContentPane().invalidate();
+                getContentPane().revalidate();
             }
         });
         setVisible(false);
         f.setVisible(true);
     }//GEN-LAST:event_selectAreaPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                } catch (Exception e) {
-                    //ignore
-                }
-                new ScreenRecorderMain().setVisible(true);
-            }
-        });
+    private static class AudioRateItem {
+
+        private String title;
+        private int sampleRate;
+        private int bitsPerSample;
+
+        public AudioRateItem(String title, int sampleRate, int bitsPerSample) {
+            this.title = title;
+            this.sampleRate = sampleRate;
+            this.bitsPerSample = bitsPerSample;
+        }
+
+        @Override
+        public String toString() {
+            return title;
+        }
     }
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JComboBox areaChoice;
-    private javax.swing.JLabel areaLabel;
-    private javax.swing.JComboBox audioRateChoice;
-    private javax.swing.JLabel audioRateLabel;
-    private javax.swing.JComboBox audioSourceChoice;
-    private javax.swing.JLabel audioSourceLabel;
-    private javax.swing.JComboBox colorsChoice;
-    private javax.swing.JLabel colorsLabel;
-    private javax.swing.JComboBox cursorChoice;
-    private javax.swing.JComboBox encodingChoice;
-    private javax.swing.JLabel encodingLabel;
-    private javax.swing.JComboBox formatChoice;
-    private javax.swing.JLabel formatLabel;
-    private javax.swing.JLabel infoLabel;
-    private javax.swing.JLabel mouseLabel;
-    private javax.swing.JSpinner mouseRateField;
-    private javax.swing.JLabel mouseRateLabel;
-    private javax.swing.JSpinner screenRateField;
-    private javax.swing.JLabel screenRateLabel;
-    private javax.swing.JButton selectAreaButton;
-    private javax.swing.JButton startStopButton;
-    private javax.swing.JLabel stateLabel;
+    private static class AudioSourceItem {
+
+        private String title;
+        private Mixer.Info mixerInfo;
+        private boolean isEnabled;
+
+        public AudioSourceItem(String title, Mixer.Info mixerInfo) {
+            this(title, mixerInfo, true);
+        }
+
+        public AudioSourceItem(String title, Mixer.Info mixerInfo, boolean isEnabled) {
+            this.title = title;
+            this.mixerInfo = mixerInfo;
+            this.isEnabled = isEnabled;
+        }
+
+        @Override
+        public String toString() {
+            return title;
+        }
+    }
+
+    private static class AreaItem {
+
+        private String title;
+        /**
+         * Area or null for entire screen.
+         */
+        private Dimension inputDimension;
+        /**
+         * null if same value as input dimension.
+         */
+        private Dimension outputDimension;
+        /**
+         * SwingConstants.CENTER, .NORTH_WEST, SOUTH_WEST.
+         */
+        private int alignment;
+        private Point location;
+
+        public AreaItem(String title, Dimension dim, int alignment) {
+            this(title, dim, null, alignment, new Point(0, 0));
+        }
+
+        public AreaItem(String title, Dimension inputDim, Dimension outputDim, int alignment, Point location) {
+            this.title = title;
+            this.inputDimension = inputDim;
+            this.outputDimension = outputDim;
+            this.alignment = alignment;
+            this.location = location;
+        }
+
+        @Override
+        public String toString() {
+            return title;
+        }
+
+        public Rectangle getBounds(GraphicsConfiguration cfg) {
+            Rectangle areaRect = null;
+            if (inputDimension != null) {
+                areaRect = new Rectangle(0, 0, inputDimension.width, inputDimension.height);
+            }
+            outputDimension = outputDimension;
+            Rectangle screenBounds = cfg.getBounds();
+            if (areaRect == null) {
+                areaRect = (Rectangle) screenBounds.clone();
+            }
+            switch (alignment) {
+                case SwingConstants.CENTER:
+                    areaRect.x = screenBounds.x + (screenBounds.width - areaRect.width) / 2;
+                    areaRect.y = screenBounds.y + (screenBounds.height - areaRect.height) / 2;
+                    break;
+                case SwingConstants.NORTH_WEST:
+                    areaRect.x = screenBounds.x;
+                    areaRect.y = screenBounds.y;
+                    break;
+                case SwingConstants.SOUTH_WEST:
+                    areaRect.x = screenBounds.x;
+                    areaRect.y = screenBounds.y + screenBounds.height - areaRect.height;
+                    break;
+                default:
+                    break;
+            }
+            areaRect.translate(location.x, location.y);
+
+            areaRect = areaRect.intersection(screenBounds);
+            return areaRect;
+
+        }
+    }
+
+    private class Handler implements ChangeListener {
+
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            ScreenRecorder r = screenRecorder;
+            if (r != null && r.getState() == ScreenRecorder.State.FAILED) {
+                recordingFailed();
+            }
+        }
+    }
+
+    private class FormListener implements ActionListener, java.awt.event.WindowListener {
+        FormListener() {
+        }
+
+        public void actionPerformed(ActionEvent evt) {
+            if (evt.getSource() == formatChoice) {
+                ScreenRecorderMain.this.formatChoicePerformed(evt);
+            } else if (evt.getSource() == startStopButton) {
+                ScreenRecorderMain.this.startStopPerformed(evt);
+            } else if (evt.getSource() == selectAreaButton) {
+                ScreenRecorderMain.this.selectAreaPerformed(evt);
+            }
+        }
+
+        public void windowActivated(WindowEvent evt) {
+        }
+
+        public void windowClosed(WindowEvent evt) {
+        }
+
+        public void windowClosing(WindowEvent evt) {
+            if (evt.getSource() == ScreenRecorderMain.this) {
+                ScreenRecorderMain.this.formWindowClosing(evt);
+            }
+        }
+
+        public void windowDeactivated(WindowEvent evt) {
+        }
+
+        public void windowDeiconified(WindowEvent evt) {
+            if (evt.getSource() == ScreenRecorderMain.this) {
+                ScreenRecorderMain.this.formWindowDeiconified(evt);
+            }
+        }
+
+        public void windowIconified(WindowEvent evt) {
+        }
+
+        public void windowOpened(WindowEvent evt) {
+        }
+    }// </editor-fold>//GEN-END:initComponents
     // End of variables declaration//GEN-END:variables
 }

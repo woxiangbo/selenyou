@@ -10,23 +10,29 @@
  */
 package org.monte.media.quicktime;
 
-import java.awt.image.ColorModel;
-import java.util.Arrays;
-
 import org.monte.media.Format;
 import org.monte.media.io.ImageOutputStreamAdapter;
 import org.monte.media.math.Rational;
 
+import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageOutputStream;
+import javax.imageio.stream.MemoryCacheImageOutputStream;
+import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.io.*;
 import java.nio.ByteOrder;
 import java.util.Date;
 import java.util.zip.DeflaterOutputStream;
-import javax.imageio.stream.*;
 
-import static java.lang.Math.*;
-import static org.monte.media.VideoFormatKeys.*;
+import static java.lang.Math.max;
 import static org.monte.media.AudioFormatKeys.*;
+import static org.monte.media.VideoFormatKeys.EncodingKey;
+import static org.monte.media.VideoFormatKeys.FrameRateKey;
+import static org.monte.media.VideoFormatKeys.MIME_QUICKTIME;
+import static org.monte.media.VideoFormatKeys.MediaType;
+import static org.monte.media.VideoFormatKeys.MediaTypeKey;
+import static org.monte.media.VideoFormatKeys.MimeTypeKey;
+import static org.monte.media.VideoFormatKeys.*;
 
 /**
  * This class provides low-level support for writing already encoded audio and
@@ -68,6 +74,16 @@ public class QuickTimeOutputStream extends AbstractQuickTimeStream {
     }
 
     /**
+     * Returns the time scale of the movie.
+     *
+     * @return time scale
+     * @see #setMovieTimeScale(long)
+     */
+    public long getMovieTimeScale() {
+        return movieTimeScale;
+    }
+
+    /**
      * Sets the time scale for this movie, that is, the number of time units
      * that pass per second in its time coordinate system. <p> The default value
      * is 600.
@@ -79,16 +95,6 @@ public class QuickTimeOutputStream extends AbstractQuickTimeStream {
             throw new IllegalArgumentException("timeScale must be between 1 and 2^32:" + timeScale);
         }
         this.movieTimeScale = timeScale;
-    }
-
-    /**
-     * Returns the time scale of the movie.
-     *
-     * @return time scale
-     * @see #setMovieTimeScale(long)
-     */
-    public long getMovieTimeScale() {
-        return movieTimeScale;
     }
 
     /**
@@ -371,13 +377,6 @@ public class QuickTimeOutputStream extends AbstractQuickTimeStream {
     }
 
     /**
-     * Sets the creation time of the movie.
-     */
-    public void setCreationTime(Date creationTime) {
-        this.creationTime = creationTime;
-    }
-
-    /**
      * Gets the creation time of the movie.
      */
     public Date getCreationTime() {
@@ -385,10 +384,10 @@ public class QuickTimeOutputStream extends AbstractQuickTimeStream {
     }
 
     /**
-     * Sets the modification time of the movie.
+     * Sets the creation time of the movie.
      */
-    public void setModificationTime(Date modificationTime) {
-        this.modificationTime = modificationTime;
+    public void setCreationTime(Date creationTime) {
+        this.creationTime = creationTime;
     }
 
     /**
@@ -396,6 +395,13 @@ public class QuickTimeOutputStream extends AbstractQuickTimeStream {
      */
     public Date getModificationTime() {
         return modificationTime;
+    }
+
+    /**
+     * Sets the modification time of the movie.
+     */
+    public void setModificationTime(Date modificationTime) {
+        this.modificationTime = modificationTime;
     }
 
     /**
@@ -515,6 +521,15 @@ public class QuickTimeOutputStream extends AbstractQuickTimeStream {
     }
 
     /**
+     * Gets the transformation matrix of the entire movie.
+     *
+     * @return The transformation matrix.
+     */
+    public double[] getMovieTransformationMatrix() {
+        return movieMatrix.clone();
+    }
+
+    /**
      * Sets the transformation matrix of the entire movie.
      * <pre>
      * {a, b, u,
@@ -533,15 +548,6 @@ public class QuickTimeOutputStream extends AbstractQuickTimeStream {
         }
 
         System.arraycopy(matrix, 0, movieMatrix, 0, 9);
-    }
-
-    /**
-     * Gets the transformation matrix of the entire movie.
-     *
-     * @return The transformation matrix.
-     */
-    public double[] getMovieTransformationMatrix() {
-        return movieMatrix.clone();
     }
 
     /**
@@ -793,7 +799,7 @@ public class QuickTimeOutputStream extends AbstractQuickTimeStream {
                 maxMediaDuration = max(t.mediaDuration, maxMediaDuration);
             }
 
-            return getRelativeStreamPosition() > (long) (1L << 61) //
+            return getRelativeStreamPosition() > (1L << 61) //
                     || maxMediaDuration > 1L << 61;
         } catch (IOException ex) {
             return true;

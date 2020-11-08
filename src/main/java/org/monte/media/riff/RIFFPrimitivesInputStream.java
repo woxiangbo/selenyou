@@ -10,7 +10,11 @@
  */
 package org.monte.media.riff;
 
-import java.io.*;
+import java.io.EOFException;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A RIFF primitives input stream lets an application read primitive data
@@ -147,7 +151,7 @@ public class RIFFPrimitivesInputStream extends FilterInputStream {
         byte[] buf = new byte[4];
         readFully(buf, 0, 4);
         //scan += 4; <- scan is updated by method readFully
-        return new String(buf, "ASCII");
+        return new String(buf, StandardCharsets.US_ASCII);
     }
 
     /**

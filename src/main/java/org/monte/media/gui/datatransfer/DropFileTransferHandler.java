@@ -10,14 +10,17 @@
  */
 package org.monte.media.gui.datatransfer;
 
-import java.awt.datatransfer.*;
+import javax.swing.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.im.InputContext;
-import java.io.*;
-import java.util.*;
-import javax.swing.*;
-import javax.swing.text.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * The DropFileTransferHandler can be used to add drag and drop
@@ -176,10 +179,7 @@ public class DropFileTransferHandler extends TransferHandler {
         }
         if (refFlavor != null) {
             return refFlavor;
-        } else if (stringFlavor != null) {
-            return stringFlavor;
-        }
-        return null;
+        } else return stringFlavor;
     }
 
     // --- TransferHandler methods ------------------------------------

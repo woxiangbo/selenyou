@@ -10,8 +10,8 @@
  */
 package org.monte.media.avi;
 
-import org.monte.media.audio.*;
 import org.monte.media.Format;
+import org.monte.media.audio.PCMAudioCodec;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -33,9 +33,8 @@ import static org.monte.media.AudioFormatKeys.*;
 public class AVIPCMAudioCodec extends PCMAudioCodec {
 
     private final static HashSet<String> supportedEncodings = new HashSet<String>(
-            Arrays.asList(new String[]{
-                    ENCODING_PCM_SIGNED,
-                    ENCODING_PCM_UNSIGNED, ENCODING_AVI_PCM,}));
+            Arrays.asList(ENCODING_PCM_SIGNED,
+                    ENCODING_PCM_UNSIGNED, ENCODING_AVI_PCM));
 
     public AVIPCMAudioCodec() {
         super(new Format[]{

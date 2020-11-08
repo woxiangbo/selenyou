@@ -10,7 +10,10 @@
  */
 package org.monte.media.riff;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
 
 /**
  * RIFF Chunks form the building blocks of a RIFF file.
@@ -150,19 +153,19 @@ public class RIFFChunk {
     }
 
     /**
-     * Sets the data.
-     * Note: The array will not be cloned.
-     */
-    public void setData(byte[] data) {
-        this.data = data;
-    }
-
-    /**
      * Gets the data.
      * Note: The array will not be cloned.
      */
     public byte[] getData() {
         return data;
+    }
+
+    /**
+     * Sets the data.
+     * Note: The array will not be cloned.
+     */
+    public void setData(byte[] data) {
+        this.data = data;
     }
 
     @Override
@@ -179,12 +182,12 @@ public class RIFFChunk {
         return id;
     }
 
-    public void setParserMessage(String newValue) {
-        this.parserMessage = newValue;
-    }
-
     public String getParserMessage() {
         return this.parserMessage;
+    }
+
+    public void setParserMessage(String newValue) {
+        this.parserMessage = newValue;
     }
 
     @Override

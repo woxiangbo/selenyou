@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 /**
  * Specifies the format of a media, for example of audio and video.
@@ -64,6 +63,30 @@ public class Format {
                 throw new ClassCastException(key + ": " + p[i + 1] + " must be of type " + key.getValueClass());
             }
             this.properties.put(key, p[i + 1]);
+        }
+    }
+
+    /**
+     * This method is used by #toString.
+     */
+    private static void appendStuffedString(Object value, StringBuilder stuffed) {
+        if (value == null) {
+            stuffed.append("null");
+        }
+        value = value.toString();
+        if (value instanceof String) {
+            for (char ch : ((String) value).toCharArray()) {
+                if (ch >= ' ') {
+                    stuffed.append(ch);
+                } else {
+                    String hex = Integer.toHexString(ch);
+                    stuffed.append("\\u");
+                    for (int i = hex.length(); i < 4; i++) {
+                        stuffed.append('0');
+                    }
+                    stuffed.append(hex);
+                }
+            }
         }
     }
 
@@ -298,29 +321,5 @@ public class Format {
         }
         buf.append('}');
         return buf.toString();
-    }
-
-    /**
-     * This method is used by #toString.
-     */
-    private static void appendStuffedString(Object value, StringBuilder stuffed) {
-        if (value == null) {
-            stuffed.append("null");
-        }
-        value = value.toString();
-        if (value instanceof String) {
-            for (char ch : ((String) value).toCharArray()) {
-                if (ch >= ' ') {
-                    stuffed.append(ch);
-                } else {
-                    String hex = Integer.toHexString(ch);
-                    stuffed.append("\\u");
-                    for (int i = hex.length(); i < 4; i++) {
-                        stuffed.append('0');
-                    }
-                    stuffed.append(hex);
-                }
-            }
-        }
     }
 }

@@ -10,11 +10,12 @@
  */
 package org.monte.media.math;
 
-import static java.lang.Math.*;
-
 import java.math.BigInteger;
 
-import static org.monte.media.math.IntMath.*;
+import static java.lang.Math.abs;
+import static java.lang.Math.signum;
+import static org.monte.media.math.IntMath.gcd;
+import static org.monte.media.math.IntMath.scm;
 
 /**
  * Represents a TIFF RATIONAL number. <p> Two LONGs 32-bit (4-byte) unsigned
@@ -115,6 +116,97 @@ public class Rational extends Number {
         this(r.num, r.den);
     }
 
+    public static Rational max(Rational a, Rational b) {
+        return (a.compareTo(b) >= 0) ? a : b;
+    }
+
+    public static Rational min(Rational a, Rational b) {
+        return (a.compareTo(b) <= 0) ? a : b;
+    }
+
+    public static Rational valueOf(double d) {
+        if (d == 0) {
+            return valueOf(0, 1);
+        }
+        if (abs(d) > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Value " + d + " is too big.");
+        }
+        if (Double.isInfinite(d)) {
+            return valueOf((long) signum(d), 0);
+        }
+        if (Double.isNaN(d)) {
+            return valueOf(0, 1); // no way to express a NaN :-(
+        }
+        return toRational(d, Integer.MAX_VALUE, 100);
+    }
+
+    public static Rational valueOf(long num, long den) {
+        return valueOf(num, den, true);
+    }
+
+    private static Rational valueOf(long num, long den, boolean reduceFraction) {
+        if (num == den) {
+            return ONE;
+        }
+        if (num == 0) {
+            return ZERO;
+        }
+        return new Rational(num, den, reduceFraction);
+    }
+
+    public static Rational valueOf(BigInteger num, BigInteger den) {
+        return valueOf(num, den, true);
+    }
+
+    private static Rational valueOf(BigInteger num, BigInteger den, boolean reduceFraction) {
+        if (num.equals(den)) {
+            return ONE;
+        }
+        if (num.equals(BigInteger.ZERO)) {
+            return ZERO;
+        }
+        return new Rational(num, den, reduceFraction);
+    }
+
+    /**
+     * Iteratively computes rational from double. <p>Reference:<br> <a
+     * href="http://www2.fz-juelich.de/video/cpp/html/exercises/exercise/Rational_cpp.html">
+     * http://www2.fz-juelich.de/video/cpp/html/exercises/exercise/Rational_cpp.html</a>
+     * </p>
+     */
+    private static Rational toRational(double x, double limit, int iterations) {
+        double intpart = Math.floor(x);
+        double fractpart = x - intpart;
+        double d = 1.0 / fractpart;
+        long left = (long) intpart;
+        if (d > limit || iterations == 0) {
+            return valueOf(left, 1, false);
+        } else {
+            return valueOf(left, 1, false).add(toRational(d, limit * 0.1, iterations - 1).inverse(), false);
+        }
+    }
+
+    /**
+     * Parses a string.
+     * <p>
+     * A rational can be represented in the following ways: <li>As a long
+     * number</li> <li>As a double number</li> <li>As an integer/integer
+     * rational number</li>
+     *
+     * @throws NumberFormatException if str can not be parsed.
+     */
+    public static Rational valueOf(String str) {
+        int p = str.indexOf('/');
+        if (p != -1) {
+            return valueOf(Long.valueOf(str.substring(0, p)), Long.valueOf(str.substring(p + 1)));
+        }
+        try {
+            return valueOf(Long.valueOf(str));
+        } catch (NumberFormatException e) {
+            return valueOf(Double.valueOf(str));
+        }
+    }
+
     public long getNumerator() {
         return num;
     }
@@ -129,7 +221,7 @@ public class Rational extends Number {
 
     private Rational add(Rational that, boolean reduceFraction) {
         if (this.den == that.den) {
-            // => same denominator: add numerators 
+            // => same denominator: add numerators
             return new Rational(this.num + that.num, this.den, reduceFraction);
         }
 
@@ -275,7 +367,7 @@ public class Rational extends Number {
         if (gcd == 0 || num == 0) {
             return num + "/" + den + " = " + 0;
         } else if (gcd == den) {
-            return num + "/" + den + " = " + Long.toString(num / den);
+            return num + "/" + den + " = " + num / den;
         } else {
             return num + "/" + den + " ≈ " + ((float) num / den);
         }
@@ -318,8 +410,8 @@ public class Rational extends Number {
      * return { -1, 0, +1 } if a < b, a = b, or a > b.
      */
     public int compareTo(Rational that) {
-        // The following code avoids BigInteger allocation if the denominators 
-        // are equal 
+        // The following code avoids BigInteger allocation if the denominators
+        // are equal
         if (this.den == that.den) {
             if (this.num < that.num) {
                 return -1;
@@ -362,82 +454,12 @@ public class Rational extends Number {
 
     }
 
-    public static Rational max(Rational a, Rational b) {
-        return (a.compareTo(b) >= 0) ? a : b;
-    }
-
-    public static Rational min(Rational a, Rational b) {
-        return (a.compareTo(b) <= 0) ? a : b;
-    }
-
     public boolean isZero() {
         return num == 0;
     }
 
     public boolean isLessOrEqualZero() {
         return num <= 0;
-    }
-
-    public static Rational valueOf(double d) {
-        if (d == 0) {
-            return valueOf(0, 1);
-        }
-        if (abs(d) > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("Value " + d + " is too big.");
-        }
-        if (Double.isInfinite(d)) {
-            return valueOf((long) signum(d), 0);
-        }
-        if (Double.isNaN(d)) {
-            return valueOf(0, 1); // no way to express a NaN :-(
-        }
-        return toRational(d, Integer.MAX_VALUE, 100);
-    }
-
-    public static Rational valueOf(long num, long den) {
-        return valueOf(num, den, true);
-    }
-
-    private static Rational valueOf(long num, long den, boolean reduceFraction) {
-        if (num == den) {
-            return ONE;
-        }
-        if (num == 0) {
-            return ZERO;
-        }
-        return new Rational(num, den, reduceFraction);
-    }
-
-    public static Rational valueOf(BigInteger num, BigInteger den) {
-        return valueOf(num, den, true);
-    }
-
-    private static Rational valueOf(BigInteger num, BigInteger den, boolean reduceFraction) {
-        if (num.equals(den)) {
-            return ONE;
-        }
-        if (num.equals(BigInteger.ZERO)) {
-            return ZERO;
-        }
-        return new Rational(num, den, reduceFraction);
-    }
-
-    /**
-     * Iteratively computes rational from double. <p>Reference:<br> <a
-     * href="http://www2.fz-juelich.de/video/cpp/html/exercises/exercise/Rational_cpp.html">
-     * http://www2.fz-juelich.de/video/cpp/html/exercises/exercise/Rational_cpp.html</a>
-     * </p>
-     */
-    private static Rational toRational(double x, double limit, int iterations) {
-        double intpart = Math.floor(x);
-        double fractpart = x - intpart;
-        double d = 1.0 / fractpart;
-        long left = (long) intpart;
-        if (d > limit || iterations == 0) {
-            return valueOf(left, 1, false);
-        } else {
-            return valueOf(left, 1, false).add(toRational(d, limit * 0.1, iterations - 1).inverse(), false);
-        }
     }
 
     public Rational round(long d) {
@@ -469,26 +491,5 @@ public class Rational extends Number {
 
     private boolean isNegative() {
         return num < 0;
-    }
-
-    /**
-     * Parses a string.
-     * <p>
-     * A rational can be represented in the following ways: <li>As a long
-     * number</li> <li>As a double number</li> <li>As an integer/integer
-     * rational number</li>
-     *
-     * @throws NumberFormatException if str can not be parsed.
-     */
-    public static Rational valueOf(String str) {
-        int p = str.indexOf('/');
-        if (p != -1) {
-            return valueOf(Long.valueOf(str.substring(0, p)), Long.valueOf(str.substring(p + 1)));
-        }
-        try {
-            return valueOf(Long.valueOf(str));
-        } catch (NumberFormatException e) {
-            return valueOf(Double.valueOf(str));
-        }
     }
 }

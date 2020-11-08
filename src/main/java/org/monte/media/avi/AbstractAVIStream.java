@@ -10,26 +10,21 @@
  */
 package org.monte.media.avi;
 
-import org.monte.media.riff.RIFFChunk;
-
-import java.util.Map;
-
 import org.monte.media.Buffer;
 import org.monte.media.Codec;
 import org.monte.media.Format;
-import org.monte.media.io.SubImageOutputStream;
+import org.monte.media.riff.RIFFChunk;
 
-import java.awt.Dimension;
+import javax.imageio.stream.ImageOutputStream;
+import java.awt.*;
 import java.awt.image.IndexColorModel;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
-import javax.imageio.stream.ImageOutputStream;
 
-import static org.monte.media.VideoFormatKeys.*;
+import static org.monte.media.VideoFormatKeys.ENCODING_AVI_DIB;
+import static org.monte.media.VideoFormatKeys.EncodingKey;
 
 /**
  * This is the base class for low-level AVI stream IO.
@@ -38,48 +33,6 @@ import static org.monte.media.VideoFormatKeys.*;
  * @version $Id: AbstractAVIStream.java 299 2013-01-03 07:40:18Z werner $
  */
 public abstract class AbstractAVIStream {
-
-    /**
-     * Chunk IDs.
-     */
-    /*
-    protected final static int RIFF_ID = 0x46464952;//0x52494646;// "RIFF"
-    protected final static int AVI_ID = 0x20495641; //0x41564920;// "AVI "
-    protected final static int LIST_ID = 0x5453494c;//0x4c495354;// "LIST"
-    protected final static int MOVI_ID = 0x69766f6d;//0x6d6f7669;// "movi"
-    protected final static int HDRL_ID = 0x6c726468;//0x6864726c;// "hdrl"
-    protected final static int AVIH_ID = 0x68697661;//0x61766968;// "avih"
-    protected final static int STRL_ID = 0x6c727473;//0x7374726c;// "strl"
-    protected final static int STRH_ID = 0x68727473;//0x73747268;// "strh"
-    protected final static int STRN_ID = 0x6e727473;//0x7374726e;// "strn"
-    protected final static int STRF_ID = 0x66727473;//0x73747266;// "strf"
-    protected final static int STRD_ID = 0x64727473;//0x73747264;// "strd"
-    protected final static int IDX1_ID = 0x31786469;//0x69647831;// "idx1"
-    protected final static int REC_ID = 0x20636572;//0x72656320;// "rec "
-    protected final static int PC_ID = 0x63700000;//0x00007063;// "??pc"
-    protected final static int DB_ID = 0x62640000;//0x00006462;// "??db"
-    protected final static int DC_ID = 0x63640000;//0x00006463;// "??dc"
-    protected final static int WB_ID = 0x62770000;//0x00007762;// "??wb"
-    */
-    protected final static int RIFF_ID = 0x52494646;// "RIFF"
-    protected final static int AVI_ID = 0x41564920;// "AVI "
-    protected final static int AVIX_ID = 0x41564958;// "AVIX"
-    protected final static int LIST_ID = 0x4c495354;// "LIST"
-    protected final static int MOVI_ID = 0x6d6f7669;// "movi"
-    protected final static int HDRL_ID = 0x6864726c;// "hdrl"
-    protected final static int AVIH_ID = 0x61766968;// "avih"
-    protected final static int STRL_ID = 0x7374726c;// "strl"
-    protected final static int STRH_ID = 0x73747268;// "strh"
-    protected final static int STRN_ID = 0x7374726e;// "strn"
-    protected final static int STRF_ID = 0x73747266;// "strf"
-    protected final static int STRD_ID = 0x73747264;// "strd"
-    protected final static int IDX1_ID = 0x69647831;// "idx1"
-    protected final static int REC_ID = 0x72656320;// "rec "
-    protected final static int CHUNK_SUBTYPE_MASK = 0xffff;// "??xx"
-    protected final static int PC_ID = 0x00007063;// "??pc"
-    protected final static int DB_ID = 0x00006462;// "??db"
-    protected final static int DC_ID = 0x00006463;// "??dc"
-    protected final static int WB_ID = 0x00007762;// "??wb"
 
     /**
      * Indicates the AVI file has an index.
@@ -121,6 +74,47 @@ public abstract class AbstractAVIStream {
      */
     public final static int STRH_FLAG_VIDEO_PALETTE_CHANGES = 0x00010000;
     /**
+     * Chunk IDs.
+     */
+    /*
+    protected final static int RIFF_ID = 0x46464952;//0x52494646;// "RIFF"
+    protected final static int AVI_ID = 0x20495641; //0x41564920;// "AVI "
+    protected final static int LIST_ID = 0x5453494c;//0x4c495354;// "LIST"
+    protected final static int MOVI_ID = 0x69766f6d;//0x6d6f7669;// "movi"
+    protected final static int HDRL_ID = 0x6c726468;//0x6864726c;// "hdrl"
+    protected final static int AVIH_ID = 0x68697661;//0x61766968;// "avih"
+    protected final static int STRL_ID = 0x6c727473;//0x7374726c;// "strl"
+    protected final static int STRH_ID = 0x68727473;//0x73747268;// "strh"
+    protected final static int STRN_ID = 0x6e727473;//0x7374726e;// "strn"
+    protected final static int STRF_ID = 0x66727473;//0x73747266;// "strf"
+    protected final static int STRD_ID = 0x64727473;//0x73747264;// "strd"
+    protected final static int IDX1_ID = 0x31786469;//0x69647831;// "idx1"
+    protected final static int REC_ID = 0x20636572;//0x72656320;// "rec "
+    protected final static int PC_ID = 0x63700000;//0x00007063;// "??pc"
+    protected final static int DB_ID = 0x62640000;//0x00006462;// "??db"
+    protected final static int DC_ID = 0x63640000;//0x00006463;// "??dc"
+    protected final static int WB_ID = 0x62770000;//0x00007762;// "??wb"
+    */
+    protected final static int RIFF_ID = 0x52494646;// "RIFF"
+    protected final static int AVI_ID = 0x41564920;// "AVI "
+    protected final static int AVIX_ID = 0x41564958;// "AVIX"
+    protected final static int LIST_ID = 0x4c495354;// "LIST"
+    protected final static int MOVI_ID = 0x6d6f7669;// "movi"
+    protected final static int HDRL_ID = 0x6864726c;// "hdrl"
+    protected final static int AVIH_ID = 0x61766968;// "avih"
+    protected final static int STRL_ID = 0x7374726c;// "strl"
+    protected final static int STRH_ID = 0x73747268;// "strh"
+    protected final static int STRN_ID = 0x7374726e;// "strn"
+    protected final static int STRF_ID = 0x73747266;// "strf"
+    protected final static int STRD_ID = 0x73747264;// "strd"
+    protected final static int IDX1_ID = 0x69647831;// "idx1"
+    protected final static int REC_ID = 0x72656320;// "rec "
+    protected final static int CHUNK_SUBTYPE_MASK = 0xffff;// "??xx"
+    protected final static int PC_ID = 0x00007063;// "??pc"
+    protected final static int DB_ID = 0x00006462;// "??db"
+    protected final static int DC_ID = 0x00006463;// "??dc"
+    protected final static int WB_ID = 0x00007762;// "??wb"
+    /**
      * Underlying output stream.
      */
     protected ImageOutputStream out;
@@ -130,33 +124,32 @@ public abstract class AbstractAVIStream {
      * constructor.
      */
     protected long streamOffset;
-
-    /**
-     * Supported media types.
-     */
-    public static enum AVIMediaType {
-
-        AUDIO("auds"),//
-        MIDI("mids"),//
-        TEXT("txts"),//
-        VIDEO("vids")//
-        ;
-        protected final String fccType;
-
-        @Override
-        public String toString() {
-            return fccType;
-        }
-
-        AVIMediaType(String fourCC) {
-            this.fccType = fourCC;
-        }
-    }
-
     /**
      * The list of tracks in the file.
      */
     protected ArrayList<Track> tracks = new ArrayList<Track>();
+
+    protected static int typeToInt(String str) {
+        int value = ((str.charAt(0) & 0xff) << 24) | ((str.charAt(1) & 0xff) << 16) | ((str.charAt(2) & 0xff) << 8) | (str.charAt(3) & 0xff);
+        return value;
+    }
+
+    protected static String intToType(int id) {
+        char[] b = new char[4];
+
+        b[0] = (char) ((id >>> 24) & 0xff);
+        b[1] = (char) ((id >>> 16) & 0xff);
+        b[2] = (char) ((id >>> 8) & 0xff);
+        b[3] = (char) (id & 0xff);
+        return String.valueOf(b);
+    }
+
+    /**
+     * Returns true, if the specified mask is set on the flag.
+     */
+    protected static boolean isFlagSet(int flag, int mask) {
+        return (flag & mask) == mask;
+    }
 
     /**
      * Gets the position relative to the beginning of the QuickTime stream. <p>
@@ -178,6 +171,28 @@ public abstract class AbstractAVIStream {
      */
     protected void seekRelative(long newPosition) throws IOException {
         out.seek(newPosition + streamOffset);
+    }
+
+    /**
+     * Supported media types.
+     */
+    public enum AVIMediaType {
+
+        AUDIO("auds"),//
+        MIDI("mids"),//
+        TEXT("txts"),//
+        VIDEO("vids")//
+        ;
+        protected final String fccType;
+
+        AVIMediaType(String fourCC) {
+            this.fccType = fourCC;
+        }
+
+        @Override
+        public String toString() {
+            return fccType;
+        }
     }
 
     /**
@@ -225,6 +240,80 @@ public abstract class AbstractAVIStream {
             this.length = length;
             this.isKeyframe = isSync;
         }
+    }
+
+    /**
+     * <p>Holds information about the entire movie. </p>
+     *
+     * <pre>
+     * ---------------
+     * AVI Main Header
+     * ---------------
+     *
+     * Set values taken from
+     * http://graphics.cs.uni-sb.de/NMM/dist-0.4.0/Docs/Doxygen/html/avifmt_8h.html
+     *
+     * typedef struct {
+     *     DWORD  microSecPerFrame;
+     *             // Specifies the number of microseconds between frames.
+     *             // This value indicates the overall timing for the file.
+     *     DWORD  maxBytesPerSec;
+     *             // Specifies the approximate maximum data rate of the file. This
+     *             // value indicates the number of bytes per second the system must
+     *             // handle to present an AVI sequence as specified by the other
+     *             // parameters contained in the main header and stream header chunks.
+     *     DWORD  paddingGranularity;
+     *             // Specifies the alignment for data, in bytes. Pad the data to
+     *             // multiples of this value.
+     *     DWORD set avihFlags  flags;
+     *             // Contains a bitwise combination of zero or more of the following flags:
+     *     DWORD  totalFrames;
+     *             // Specifies the total number of frames of data in the file.
+     *     DWORD  initialFrames;
+     *             // Specifies the initial frame for interleaved files. Noninterleaved
+     *             // files should specify zero. If you are creating interleaved files,
+     *             // specify the number of frames in the file prior to the initial
+     *             // frame of the AVI sequence in this member. For more information
+     *             // about the contents of this member, see "Special Information for
+     *             // Interleaved Files" in the Video for Windows Programmer's Guide.
+     *     DWORD  streams;
+     *             // Specifies the number of streams in the file. For example, a file
+     *             // with audio and video has two streams.
+     *     DWORD  suggestedBufferSize;
+     *             // Specifies the suggested buffer size for reading the file.
+     *             // Generally, this size should be large enough to contain the
+     *             // largest chunk in the file. If set to zero, or if it is too small,
+     *             // the playback software will have to reallocate memory during
+     *             // playback, which will reduce performance. For an interleaved file,
+     *             // the buffer size should be large enough to read an entire record,
+     *             // and not just a chunk.
+     *     DWORD  width;
+     *             // Specifies the width of the AVI file in pixels.
+     *     DWORD  height;
+     *             // Specifies the height of the AVI file in pixels.
+     *     DWORD[]  reserved;
+     *             // Reserved. Set this array to zero.
+     * } AVIMAINHEADER;
+     * </pre>
+     */
+    protected static class MainHeader {
+
+        /**
+         * Specifies the number of microseconds (=10E-6 seconds) between frames.
+         * This value indicates the overall timing for the file.
+         */
+        protected long microSecPerFrame;
+        protected long maxBytesPerSec;
+        protected long paddingGranularity;
+        protected int flags;
+        protected long totalFrames;
+        protected long initialFrames;
+        protected long streams;
+        protected long suggestedBufferSize;
+        /**
+         * Width and height of the movie. Null if not specified.
+         */
+        protected Dimension size;
     }
 
     /**
@@ -337,11 +426,14 @@ public abstract class AbstractAVIStream {
     protected abstract class Track {
 
         /**
-         * The media format.
+         * {@code mediaType.fccType} contains a FOURCC that specifies the type
+         * of the data contained in the stream. The following standard AVI
+         * values for video and audio are defined.
          * <p>
-         * FIXME - AbstractAVIStream should have no dependencies to Format.
+         * FOURCC	Description 'auds'	Audio stream 'mids'	MIDI stream 'txts'	Text
+         * stream 'vids'	Video stream
          */
-        protected Format format;
+        protected final AVIMediaType mediaType;
         // Common metadata
         /**
          * The scale of the media in the track. <p> Used with rate to specify
@@ -357,6 +449,12 @@ public abstract class AbstractAVIStream {
          * @see scale
          */
         /**
+         * The media format.
+         * <p>
+         * FIXME - AbstractAVIStream should have no dependencies to Format.
+         */
+        protected Format format;
+        /**
          * List of samples.
          */
         protected ArrayList<Sample> samples;
@@ -365,23 +463,14 @@ public abstract class AbstractAVIStream {
          * all samples as sync samples. n = sync every n-th sample.
          */
         protected int syncInterval = 30;
+        //
+        // AVISTREAMHEADER structure
+        // -------------------------
         /**
          * The twoCC code is used for the ids of the chunks which hold the data
          * samples.
          */
         protected int twoCC;
-        //
-        // AVISTREAMHEADER structure
-        // -------------------------
-        /**
-         * {@code mediaType.fccType} contains a FOURCC that specifies the type
-         * of the data contained in the stream. The following standard AVI
-         * values for video and audio are defined.
-         * <p>
-         * FOURCC	Description 'auds'	Audio stream 'mids'	MIDI stream 'txts'	Text
-         * stream 'vids'	Video stream
-         */
-        protected final AVIMediaType mediaType;
         //protected String fccType;
         /**
          * Optionally, contains a FOURCC that identifies a specific data
@@ -476,22 +565,6 @@ public abstract class AbstractAVIStream {
          */
         //protected long dwSampleSize; => computed from tr.samples
         /**
-         * Specifies the destination rectangle for a text or video stream within
-         * the movie rectangle specified by the dwWidth and dwHeight members of
-         * the AVI main header structure. The rcFrame member is typically used
-         * in support of multiple video streams. Set this rectangle to the
-         * coordinates corresponding to the movie rectangle to update the whole
-         * movie rectangle. Units for this member are pixels. The upper-left
-         * corner of the destination rectangle is relative to the upper-left
-         * corner of the movie rectangle.
-         */
-        int frameLeft;
-        int frameTop;
-        int frameRight;
-        int frameBottom;
-        // --------------------------------
-        // End of AVISTREAMHEADER structure
-        /**
          * This chunk holds the AVI Stream Header.
          */
         protected FixedSizeDataChunk strhChunk;
@@ -507,6 +580,8 @@ public abstract class AbstractAVIStream {
          * The codec.
          */
         protected Codec codec;
+        // --------------------------------
+        // End of AVISTREAMHEADER structure
         /**
          * The output buffer is used to store the output of the codec.
          */
@@ -524,6 +599,20 @@ public abstract class AbstractAVIStream {
          * List of additional header chunks.
          */
         protected ArrayList<RIFFChunk> extraHeaders;
+        /**
+         * Specifies the destination rectangle for a text or video stream within
+         * the movie rectangle specified by the dwWidth and dwHeight members of
+         * the AVI main header structure. The rcFrame member is typically used
+         * in support of multiple video streams. Set this rectangle to the
+         * coordinates corresponding to the movie rectangle to update the whole
+         * movie rectangle. Units for this member are pixels. The upper-left
+         * corner of the destination rectangle is relative to the upper-left
+         * corner of the movie rectangle.
+         */
+        int frameLeft;
+        int frameTop;
+        int frameRight;
+        int frameBottom;
 
         public Track(int trackIndex, AVIMediaType mediaType, int fourCC) {
             this.mediaType = mediaType;
@@ -950,79 +1039,6 @@ public abstract class AbstractAVIStream {
 
         // WAVEFORMATEX Structure
         /**
-         * Waveform-audio format type. Format tags are registered with Microsoft
-         * Corporation for many compression algorithms. A complete list of
-         * format tags can be found in the Mmreg.h header file. For one- or
-         * two-channel Pulse Code Modulation (PCM) data, this value should be
-         * WAVE_FORMAT_PCM=0x0001.
-         * <p>
-         * If wFormatTag equals WAVE_FORMAT_EXTENSIBLE=0xFFFE, the structure is
-         * interpreted as a WAVEFORMATEXTENSIBLE structure. If wFormatTag equals
-         * WAVE_FORMAT_MPEG, the structure is interpreted as an MPEG1WAVEFORMAT
-         * structure. If wFormatTag equals MPEGLAYER3WAVEFORMAT, the structure
-         * is interpreted as an MPEGLAYER3WAVEFORMAT structure. Before
-         * reinterpreting a WAVEFORMATEX structure as one of these extended
-         * structures, verify that the actual structure size is sufficiently
-         * large and that the cbSize member indicates a valid size.
-         */
-        protected int wFormatTag;
-        /**
-         * Number of channels in the waveform-audio data. Monaural data uses one
-         * channel and stereo data uses two channels.
-         */
-        protected int channels;
-        /**
-         * Sample rate, in samples per second (hertz). If wFormatTag is
-         * WAVE_FORMAT_PCM, then common values for samplesPerSec are 8.0 kHz,
-         * 11.025 kHz, 22.05 kHz, and 44.1 kHz. For non-PCM formats, this member
-         * must be computed according to the manufacturer's specification of the
-         * format tag.
-         */
-        protected long samplesPerSec;
-        /**
-         * Required average data-transfer rate, in bytes per second, for the
-         * format tag. If wFormatTag is WAVE_FORMAT_PCM, avgBytesPerSec should
-         * be equal to the product of samplesPerSec and blockAlign. For non-PCM
-         * formats, this member must be computed according to the manufacturer's
-         * specification of the format tag.
-         */
-        protected long avgBytesPerSec;
-        /**
-         * Block alignment, in bytes. The block alignment is the minimum atomic
-         * unit of data for the wFormatTag format type. If wFormatTag is
-         * WAVE_FORMAT_PCM or WAVE_FORMAT_EXTENSIBLE, blockAlign must be equal
-         * to the product of channels and bitsPerSample divided by 8 (bits per
-         * byte). For non-PCM formats, this member must be computed according to
-         * the manufacturer's specification of the format tag.
-         * <p>
-         * Software must process a multiple of blockAlign bytes of data at a
-         * time. Data written to and read from a device must always startTime at
-         * the beginning of a block. For example, it is illegal to startTime
-         * playback of PCM data in the middle of a sample (that is, on a
-         * non-block-aligned boundary).
-         */
-        protected int blockAlign;
-        /**
-         * Bits per sample for the wFormatTag format type. If wFormatTag is
-         * WAVE_FORMAT_PCM, then bitsPerSample should be equal to 8 or 16. For
-         * non-PCM formats, this member must be set according to the
-         * manufacturer's specification of the format tag. If wFormatTag is
-         * WAVE_FORMAT_EXTENSIBLE, this value can be any integer multiple of 8.
-         * Some compression schemes cannot define a value for bitsPerSample, so
-         * this member can be zero.
-         */
-        protected int bitsPerSample;
-        /**
-         * Size, in bytes, of extra format information appended to the end of
-         * the WAVEFORMATEX structure. This information can be used by non-PCM
-         * formats to store extra attributes for the wFormatTag. If no extra
-         * information is required by the wFormatTag, this member must be set to
-         * zero. For WAVE_FORMAT_PCM formats (and only WAVE_FORMAT_PCM formats),
-         * this member is ignored.
-         */
-        //int cbSize; => this value is computed
-        // Well known wave format tags
-        /**
          * Microsoft Corporation
          */
         protected final static int WAVE_FORMAT_PCM = 0x0001;
@@ -1047,6 +1063,16 @@ public abstract class AbstractAVIStream {
          * Microsoft Corporation
          */
         protected final static int WAVE_FORMAT_MULAW = 0x0007;
+        /**
+         * Size, in bytes, of extra format information appended to the end of
+         * the WAVEFORMATEX structure. This information can be used by non-PCM
+         * formats to store extra attributes for the wFormatTag. If no extra
+         * information is required by the wFormatTag, this member must be set to
+         * zero. For WAVE_FORMAT_PCM formats (and only WAVE_FORMAT_PCM formats),
+         * this member is ignored.
+         */
+        //int cbSize; => this value is computed
+        // Well known wave format tags
         /**
          * OKI
          */
@@ -1285,6 +1311,69 @@ public abstract class AbstractAVIStream {
          * acquire an official format tag from Microsoft.
          */
         protected final static int WAVE_FORMAT_DEVELOPMENT = 0xFFFF;
+        /**
+         * Waveform-audio format type. Format tags are registered with Microsoft
+         * Corporation for many compression algorithms. A complete list of
+         * format tags can be found in the Mmreg.h header file. For one- or
+         * two-channel Pulse Code Modulation (PCM) data, this value should be
+         * WAVE_FORMAT_PCM=0x0001.
+         * <p>
+         * If wFormatTag equals WAVE_FORMAT_EXTENSIBLE=0xFFFE, the structure is
+         * interpreted as a WAVEFORMATEXTENSIBLE structure. If wFormatTag equals
+         * WAVE_FORMAT_MPEG, the structure is interpreted as an MPEG1WAVEFORMAT
+         * structure. If wFormatTag equals MPEGLAYER3WAVEFORMAT, the structure
+         * is interpreted as an MPEGLAYER3WAVEFORMAT structure. Before
+         * reinterpreting a WAVEFORMATEX structure as one of these extended
+         * structures, verify that the actual structure size is sufficiently
+         * large and that the cbSize member indicates a valid size.
+         */
+        protected int wFormatTag;
+        /**
+         * Number of channels in the waveform-audio data. Monaural data uses one
+         * channel and stereo data uses two channels.
+         */
+        protected int channels;
+        /**
+         * Sample rate, in samples per second (hertz). If wFormatTag is
+         * WAVE_FORMAT_PCM, then common values for samplesPerSec are 8.0 kHz,
+         * 11.025 kHz, 22.05 kHz, and 44.1 kHz. For non-PCM formats, this member
+         * must be computed according to the manufacturer's specification of the
+         * format tag.
+         */
+        protected long samplesPerSec;
+        /**
+         * Required average data-transfer rate, in bytes per second, for the
+         * format tag. If wFormatTag is WAVE_FORMAT_PCM, avgBytesPerSec should
+         * be equal to the product of samplesPerSec and blockAlign. For non-PCM
+         * formats, this member must be computed according to the manufacturer's
+         * specification of the format tag.
+         */
+        protected long avgBytesPerSec;
+        /**
+         * Block alignment, in bytes. The block alignment is the minimum atomic
+         * unit of data for the wFormatTag format type. If wFormatTag is
+         * WAVE_FORMAT_PCM or WAVE_FORMAT_EXTENSIBLE, blockAlign must be equal
+         * to the product of channels and bitsPerSample divided by 8 (bits per
+         * byte). For non-PCM formats, this member must be computed according to
+         * the manufacturer's specification of the format tag.
+         * <p>
+         * Software must process a multiple of blockAlign bytes of data at a
+         * time. Data written to and read from a device must always startTime at
+         * the beginning of a block. For example, it is illegal to startTime
+         * playback of PCM data in the middle of a sample (that is, on a
+         * non-block-aligned boundary).
+         */
+        protected int blockAlign;
+        /**
+         * Bits per sample for the wFormatTag format type. If wFormatTag is
+         * WAVE_FORMAT_PCM, then bitsPerSample should be equal to 8 or 16. For
+         * non-PCM formats, this member must be set according to the
+         * manufacturer's specification of the format tag. If wFormatTag is
+         * WAVE_FORMAT_EXTENSIBLE, this value can be any integer multiple of 8.
+         * Some compression schemes cannot define a value for bitsPerSample, so
+         * this member can be zero.
+         */
+        protected int bitsPerSample;
         private int sampleChunkFourCC;
 
         public AudioTrack(int trackIndex, int fourCC) {
@@ -1517,8 +1606,7 @@ public abstract class AbstractAVIStream {
                 //               return data.length();
                 return out.getStreamPosition() - offset;
             } catch (IOException ex) {
-                InternalError ie = new InternalError("IOException");
-                ie.initCause(ex);
+                InternalError ie = new InternalError("IOException", ex);
                 throw ie;
             }
         }
@@ -1636,101 +1724,5 @@ public abstract class AbstractAVIStream {
         public int getSampleChunkFourCC(boolean isSync) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
-    }
-
-    /**
-     * <p>Holds information about the entire movie. </p>
-     *
-     * <pre>
-     * ---------------
-     * AVI Main Header
-     * ---------------
-     *
-     * Set values taken from
-     * http://graphics.cs.uni-sb.de/NMM/dist-0.4.0/Docs/Doxygen/html/avifmt_8h.html
-     *
-     * typedef struct {
-     *     DWORD  microSecPerFrame;
-     *             // Specifies the number of microseconds between frames.
-     *             // This value indicates the overall timing for the file.
-     *     DWORD  maxBytesPerSec;
-     *             // Specifies the approximate maximum data rate of the file. This
-     *             // value indicates the number of bytes per second the system must
-     *             // handle to present an AVI sequence as specified by the other
-     *             // parameters contained in the main header and stream header chunks.
-     *     DWORD  paddingGranularity;
-     *             // Specifies the alignment for data, in bytes. Pad the data to
-     *             // multiples of this value.
-     *     DWORD set avihFlags  flags;
-     *             // Contains a bitwise combination of zero or more of the following flags:
-     *     DWORD  totalFrames;
-     *             // Specifies the total number of frames of data in the file.
-     *     DWORD  initialFrames;
-     *             // Specifies the initial frame for interleaved files. Noninterleaved
-     *             // files should specify zero. If you are creating interleaved files,
-     *             // specify the number of frames in the file prior to the initial
-     *             // frame of the AVI sequence in this member. For more information
-     *             // about the contents of this member, see "Special Information for
-     *             // Interleaved Files" in the Video for Windows Programmer's Guide.
-     *     DWORD  streams;
-     *             // Specifies the number of streams in the file. For example, a file
-     *             // with audio and video has two streams.
-     *     DWORD  suggestedBufferSize;
-     *             // Specifies the suggested buffer size for reading the file.
-     *             // Generally, this size should be large enough to contain the
-     *             // largest chunk in the file. If set to zero, or if it is too small,
-     *             // the playback software will have to reallocate memory during
-     *             // playback, which will reduce performance. For an interleaved file,
-     *             // the buffer size should be large enough to read an entire record,
-     *             // and not just a chunk.
-     *     DWORD  width;
-     *             // Specifies the width of the AVI file in pixels.
-     *     DWORD  height;
-     *             // Specifies the height of the AVI file in pixels.
-     *     DWORD[]  reserved;
-     *             // Reserved. Set this array to zero.
-     * } AVIMAINHEADER;
-     * </pre>
-     */
-    protected static class MainHeader {
-
-        /**
-         * Specifies the number of microseconds (=10E-6 seconds) between frames.
-         * This value indicates the overall timing for the file.
-         */
-        protected long microSecPerFrame;
-        protected long maxBytesPerSec;
-        protected long paddingGranularity;
-        protected int flags;
-        protected long totalFrames;
-        protected long initialFrames;
-        protected long streams;
-        protected long suggestedBufferSize;
-        /**
-         * Width and height of the movie. Null if not specified.
-         */
-        protected Dimension size;
-    }
-
-    protected static int typeToInt(String str) {
-        int value = ((str.charAt(0) & 0xff) << 24) | ((str.charAt(1) & 0xff) << 16) | ((str.charAt(2) & 0xff) << 8) | (str.charAt(3) & 0xff);
-        return value;
-    }
-
-    protected static String intToType(int id) {
-        char[] b = new char[4];
-
-        b[0] = (char) ((id >>> 24) & 0xff);
-        b[1] = (char) ((id >>> 16) & 0xff);
-        b[2] = (char) ((id >>> 8) & 0xff);
-        b[3] = (char) (id & 0xff);
-        return String.valueOf(b);
-    }
-
-    /**
-     * Returns true, if the specified mask is set on the flag.
-     */
-    protected static boolean isFlagSet(int flag, int mask) {
-        return (flag & mask) == mask;
     }
 }

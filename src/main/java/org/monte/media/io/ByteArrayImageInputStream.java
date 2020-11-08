@@ -29,6 +29,10 @@ import java.nio.ByteOrder;
  */
 public class ByteArrayImageInputStream extends ImageInputStreamImpl2 {
     /**
+     * The offset to the start of the array.
+     */
+    private final int arrayOffset;
+    /**
      * An array of bytes that was provided
      * by the creator of the stream. Elements <code>buf[0]</code>
      * through <code>buf[count-1]</code> are the
@@ -36,8 +40,7 @@ public class ByteArrayImageInputStream extends ImageInputStreamImpl2 {
      * stream;  element <code>buf[streamPos]</code> is
      * the next byte to be read.
      */
-    protected byte buf[];
-
+    protected byte[] buf;
     /**
      * The index one greater than the last valid character in the input
      * stream buffer.
@@ -48,11 +51,6 @@ public class ByteArrayImageInputStream extends ImageInputStreamImpl2 {
      * can ever be read  from the input stream buffer.
      */
     protected int count;
-
-    /**
-     * The offset to the start of the array.
-     */
-    private final int arrayOffset;
 
     public ByteArrayImageInputStream(byte[] buf) {
         this(buf, ByteOrder.BIG_ENDIAN);
@@ -119,7 +117,7 @@ public class ByteArrayImageInputStream extends ImageInputStreamImpl2 {
      *                                   <code>b.length - off</code>
      */
     @Override
-    public synchronized int read(byte b[], int off, int len) {
+    public synchronized int read(byte[] b, int off, int len) {
         flushBits();
         if (b == null) {
             throw new NullPointerException();

@@ -10,17 +10,16 @@
  */
 package org.monte.media.converter;
 
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import java.awt.image.IndexColorModel;
-
 import org.monte.media.AbstractVideoCodec;
 import org.monte.media.Buffer;
 import org.monte.media.Format;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
+
+import static org.monte.media.BufferFlag.DISCARD;
 import static org.monte.media.VideoFormatKeys.*;
-import static org.monte.media.BufferFlag.*;
 
 /**
  * Scales a buffered image.

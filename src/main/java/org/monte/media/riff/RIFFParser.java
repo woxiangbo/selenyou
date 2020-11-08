@@ -14,15 +14,15 @@ import org.monte.media.AbortException;
 import org.monte.media.ParseException;
 import org.monte.media.io.ImageInputStreamAdapter;
 
+import javax.imageio.stream.ImageInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.WeakHashMap;
-import javax.imageio.stream.ImageInputStream;
 
 /**
  * Interprets Resource Interchange File Format (RIFF) streams.
@@ -181,7 +181,6 @@ import javax.imageio.stream.ImageInputStream;
  * @see RIFFVisitor
  */
 public class RIFFParser extends Object {
-    private final static boolean DEBUG = false;
     /**
      * ID for FormGroupExpression.
      */
@@ -202,6 +201,7 @@ public class RIFFParser extends Object {
      * ID for JUNK chunks.
      */
     public final static int JUNK_ID = stringToID("JUNK");
+    private final static boolean DEBUG = false;
     /**
      * The visitor traverses the parse tree.
      */
@@ -246,11 +246,125 @@ public class RIFFParser extends Object {
     private long streamOffset;
 
     /* ---- constructors ---- */
+    private WeakHashMap<String, String> ids;
 
     /**
      * Constructs a new RIFF parser.
      */
     public RIFFParser() {
+    }
+
+    /**
+     * Checks wether the argument represents a valid RIFF GroupID.
+     *
+     * <p>Validation
+     * <ul>
+     * <li>	Group ID must be one of RIFF_ID, LIST_ID.</li>
+     * </ul>
+     *
+     * @param id Chunk ID to be checked.
+     * @return True when the chunk ID is a valid Group ID.
+     */
+    public static boolean isGroupID(int id) {
+        return id == LIST_ID || id == RIFF_ID;
+    }
+
+
+
+    /* ---- accessor methods ---- */
+    /* ---- action methods ---- */
+
+    /**
+     * Checks wether the argument represents a valid RIFF Group Type.
+     *
+     * <p>Validation
+     * <ul>
+     * <li>	Must be a valid ID.</li>
+     * <li>	Must not be a group ID.</li>
+     * <li>	Must not be a NULL_ID.</li>
+     * </ul>
+     *
+     * @param id Chunk ID to be checked.
+     * @return True when the chunk ID is a valid Group ID.
+     */
+    public static boolean isGroupType(int id) {
+        return isID(id) && !isGroupID(id) && id != NULL_ID;
+    }
+
+    /**
+     * Checks if the argument represents a valid RIFF ID.
+     *
+     * <p>Validation
+     * <li>	Every byte of an ID must be in the range of 0x20..0x7e
+     * <li>	The id may not have leading spaces (unless the id is a NULL_ID).
+     *
+     * @param id Chunk ID to be checked.
+     * @return True when the ID is a valid IFF chunk ID.
+     */
+    public static boolean isID(int id) {
+        int c0 = id >> 24;
+        int c1 = (id >> 16) & 0xff;
+        int c2 = (id >> 8) & 0xff;
+        int c3 = id & 0xff;
+
+        return id == NULL_NUL_ID
+                || c0 >= 0x20 && c0 <= 0x7e
+                && c1 >= 0x20 && c1 <= 0x7e
+                && c2 >= 0x20 && c2 <= 0x7e
+                && c3 >= 0x20 && c3 <= 0x7e;
+    }
+
+    /**
+     * Returns whether the argument is a valid Local Chunk ID.
+     *
+     * <p>Validation
+     * <ud>
+     * <li>	Must be valid ID.</li>
+     * <li>	Local Chunk IDs may not collide with GroupIDs.</id>
+     * <li>	Must not be a NULL_ID.</li>
+     * </ud>
+     *
+     * @param id Chunk ID to be checked.
+     * @return True when the chunk ID is a Local Chunk ID.
+     */
+    public static boolean isLocalChunkID(int id) {
+        if (isGroupID(id)) {
+            return false;
+        }
+        return id != NULL_ID && isID(id);
+    }
+
+    /**
+     * Convert an integer IFF identifier to String.
+     *
+     * @param anInt ID to be converted.
+     * @return String representation of the ID.
+     */
+    public static String idToString(int anInt) {
+        byte[] bytes = new byte[4];
+
+        bytes[0] = (byte) (anInt >>> 24);
+        bytes[1] = (byte) (anInt >>> 16);
+        bytes[2] = (byte) (anInt >>> 8);
+        bytes[3] = (byte) (anInt >>> 0);
+
+        return new String(bytes, StandardCharsets.US_ASCII);
+    }
+
+    /**
+     * Converts the first four letters of the
+     * String into an IFF Identifier.
+     *
+     * @param aString String to be converted.
+     * @return ID representation of the String.
+     */
+    public static int stringToID(String aString) {
+        byte[] bytes = aString.getBytes();
+
+        return ((int) bytes[0]) << 24
+                | ((int) bytes[1]) << 16
+                | ((int) bytes[2]) << 8
+                | ((int) bytes[3]) << 0;
     }
 
     public long getStreamOffset() {
@@ -260,11 +374,6 @@ public class RIFFParser extends Object {
     public void setStreamOffset(long offset) {
         this.streamOffset = offset;
     }
-
-
-
-    /* ---- accessor methods ---- */
-    /* ---- action methods ---- */
 
     /**
      * Interprets the RIFFFile expression located at the
@@ -537,11 +646,7 @@ public class RIFFParser extends Object {
      */
     protected boolean isDataChunk(RIFFChunk chunk) {
         if (dataChunks == null) {
-            if (collectionChunks == null && propertyChunks == null && (stopChunkTypes == null || !stopChunkTypes.contains(chunk.getType()))) {
-                return true;
-            } else {
-                return false;
-            }
+            return collectionChunks == null && propertyChunks == null && (stopChunkTypes == null || !stopChunkTypes.contains(chunk.getType()));
         } else {
             return dataChunks.contains(chunk);
         }
@@ -607,6 +712,8 @@ public class RIFFParser extends Object {
             return collectionChunks.contains(chunk);
         }
     }
+
+    /* ---- Class methods ---- */
 
     /**
      * Declares a data chunk.
@@ -745,121 +852,5 @@ public class RIFFParser extends Object {
 
     private boolean isStopChunk(RIFFChunk chunk) {
         return isStopChunks || stopChunkTypes != null && stopChunkTypes.contains(chunk.getType());
-    }
-
-    /* ---- Class methods ---- */
-
-    /**
-     * Checks wether the argument represents a valid RIFF GroupID.
-     *
-     * <p>Validation
-     * <ul>
-     * <li>	Group ID must be one of RIFF_ID, LIST_ID.</li>
-     * </ul>
-     *
-     * @param id Chunk ID to be checked.
-     * @return True when the chunk ID is a valid Group ID.
-     */
-    public static boolean isGroupID(int id) {
-        return id == LIST_ID || id == RIFF_ID;
-    }
-
-    /**
-     * Checks wether the argument represents a valid RIFF Group Type.
-     *
-     * <p>Validation
-     * <ul>
-     * <li>	Must be a valid ID.</li>
-     * <li>	Must not be a group ID.</li>
-     * <li>	Must not be a NULL_ID.</li>
-     * </ul>
-     *
-     * @param id Chunk ID to be checked.
-     * @return True when the chunk ID is a valid Group ID.
-     */
-    public static boolean isGroupType(int id) {
-        return isID(id) && !isGroupID(id) && id != NULL_ID;
-    }
-
-    /**
-     * Checks if the argument represents a valid RIFF ID.
-     *
-     * <p>Validation
-     * <li>	Every byte of an ID must be in the range of 0x20..0x7e
-     * <li>	The id may not have leading spaces (unless the id is a NULL_ID).
-     *
-     * @param id Chunk ID to be checked.
-     * @return True when the ID is a valid IFF chunk ID.
-     */
-    public static boolean isID(int id) {
-        int c0 = id >> 24;
-        int c1 = (id >> 16) & 0xff;
-        int c2 = (id >> 8) & 0xff;
-        int c3 = id & 0xff;
-
-        return id == NULL_NUL_ID
-                || c0 >= 0x20 && c0 <= 0x7e
-                && c1 >= 0x20 && c1 <= 0x7e
-                && c2 >= 0x20 && c2 <= 0x7e
-                && c3 >= 0x20 && c3 <= 0x7e;
-    }
-
-    /**
-     * Returns whether the argument is a valid Local Chunk ID.
-     *
-     * <p>Validation
-     * <ud>
-     * <li>	Must be valid ID.</li>
-     * <li>	Local Chunk IDs may not collide with GroupIDs.</id>
-     * <li>	Must not be a NULL_ID.</li>
-     * </ud>
-     *
-     * @param id Chunk ID to be checked.
-     * @return True when the chunk ID is a Local Chunk ID.
-     */
-    public static boolean isLocalChunkID(int id) {
-        if (isGroupID(id)) {
-            return false;
-        }
-        return id != NULL_ID && isID(id);
-    }
-
-    private WeakHashMap<String, String> ids;
-
-    /**
-     * Convert an integer IFF identifier to String.
-     *
-     * @param anInt ID to be converted.
-     * @return String representation of the ID.
-     */
-    public static String idToString(int anInt) {
-        byte[] bytes = new byte[4];
-
-        bytes[0] = (byte) (anInt >>> 24);
-        bytes[1] = (byte) (anInt >>> 16);
-        bytes[2] = (byte) (anInt >>> 8);
-        bytes[3] = (byte) (anInt >>> 0);
-
-        try {
-            return new String(bytes, "ASCII");
-        } catch (UnsupportedEncodingException e) {
-            throw new InternalError(e.getMessage());
-        }
-    }
-
-    /**
-     * Converts the first four letters of the
-     * String into an IFF Identifier.
-     *
-     * @param aString String to be converted.
-     * @return ID representation of the String.
-     */
-    public static int stringToID(String aString) {
-        byte[] bytes = aString.getBytes();
-
-        return ((int) bytes[0]) << 24
-                | ((int) bytes[1]) << 16
-                | ((int) bytes[2]) << 8
-                | ((int) bytes[3]) << 0;
     }
 }

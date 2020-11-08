@@ -11,14 +11,18 @@
 package org.monte.media;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
-import static org.monte.media.VideoFormatKeys.*;
 import static org.monte.media.AudioFormatKeys.*;
+import static org.monte.media.VideoFormatKeys.EncodingKey;
+import static org.monte.media.VideoFormatKeys.MIME_ANIM;
+import static org.monte.media.VideoFormatKeys.MIME_AVI;
+import static org.monte.media.VideoFormatKeys.MIME_JAVA;
+import static org.monte.media.VideoFormatKeys.MIME_QUICKTIME;
+import static org.monte.media.VideoFormatKeys.MediaType;
+import static org.monte.media.VideoFormatKeys.MediaTypeKey;
+import static org.monte.media.VideoFormatKeys.MimeTypeKey;
+import static org.monte.media.VideoFormatKeys.*;
 
 /**
  * {@code DefaultRegistry}.
@@ -35,6 +39,10 @@ public class DefaultRegistry extends Registry {
     private HashMap<String, LinkedList<RegistryEntry>> writerMap;
     private HashMap<String, Format> fileFormatMap;
 
+    public DefaultRegistry() {
+        init();
+    }
+
     @Override
     public Format[] getReaderFormats() {
         return getFileFormats();
@@ -48,23 +56,6 @@ public class DefaultRegistry extends Registry {
     @Override
     public Format[] getFileFormats() {
         return fileFormatMap.values().toArray(new Format[fileFormatMap.size()]);
-    }
-
-    private static class RegistryEntry {
-
-        Format inputFormat;
-        Format outputFormat;
-        String className;
-
-        public RegistryEntry(Format inputFormat, Format outputFormat, String className) {
-            this.inputFormat = inputFormat;
-            this.outputFormat = outputFormat;
-            this.className = className;
-        }
-    }
-
-    public DefaultRegistry() {
-        init();
     }
 
     @Override
@@ -386,6 +377,19 @@ public class DefaultRegistry extends Registry {
                     j.remove();
                 }
             }
+        }
+    }
+
+    private static class RegistryEntry {
+
+        Format inputFormat;
+        Format outputFormat;
+        String className;
+
+        public RegistryEntry(Format inputFormat, Format outputFormat, String className) {
+            this.inputFormat = inputFormat;
+            this.outputFormat = outputFormat;
+            this.className = className;
         }
     }
 

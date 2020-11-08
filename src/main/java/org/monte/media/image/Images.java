@@ -11,11 +11,10 @@
 
 package org.monte.media.image;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.*;
-import java.net.*;
-
-import javax.swing.*;
+import java.net.URL;
 
 /**
  * Image processing methods.

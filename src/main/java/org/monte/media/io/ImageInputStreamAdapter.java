@@ -11,9 +11,9 @@
 
 package org.monte.media.io;
 
+import javax.imageio.stream.ImageInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
-import javax.imageio.stream.ImageInputStream;
 
 /**
  * ImageInputStreamAdapter.
@@ -74,7 +74,7 @@ public class ImageInputStreamAdapter extends FilterInputStream {
      * @see FilterInputStream#in
      */
     @Override
-    public int read(byte b[], int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException {
         return iis.read(b, off, len);
     }
 

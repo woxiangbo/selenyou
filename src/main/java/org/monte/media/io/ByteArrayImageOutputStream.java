@@ -12,15 +12,15 @@
  */
 package org.monte.media.io;
 
-import java.io.OutputStream;
+import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.stream.ImageOutputStreamImpl;
 import java.io.ByteArrayOutputStream;
-import javax.imageio.stream.ImageOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
+import java.io.OutputStream;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
-import static java.lang.Math.*;
+import static java.lang.Math.max;
 
 /**
  * This class implements an image output stream in which the data is
@@ -41,6 +41,10 @@ public class ByteArrayImageOutputStream extends ImageOutputStreamImpl {
 
 
     /**
+     * The offset to the start of the array.
+     */
+    private final int arrayOffset;
+    /**
      * An array of bytes that was provided
      * by the creator of the stream. Elements <code>buf[0]</code>
      * through <code>buf[count-1]</code> are the
@@ -48,7 +52,7 @@ public class ByteArrayImageOutputStream extends ImageOutputStreamImpl {
      * stream;  element <code>buf[streamPos]</code> is
      * the next byte to be read.
      */
-    protected byte buf[];
+    protected byte[] buf;
     /**
      * The index one greater than the last valid character in the input
      * stream buffer.
@@ -59,10 +63,6 @@ public class ByteArrayImageOutputStream extends ImageOutputStreamImpl {
      * can ever be read  from the input stream buffer.
      */
     protected int count;
-    /**
-     * The offset to the start of the array.
-     */
-    private final int arrayOffset;
 
     public ByteArrayImageOutputStream() {
         this(16);
@@ -141,7 +141,7 @@ public class ByteArrayImageOutputStream extends ImageOutputStreamImpl {
      *                                   <code>b.length - off</code>
      */
     @Override
-    public synchronized int read(byte b[], int off, int len) throws IOException {
+    public synchronized int read(byte[] b, int off, int len) throws IOException {
         flushBits();
         if (b == null) {
             throw new NullPointerException();
@@ -254,7 +254,7 @@ public class ByteArrayImageOutputStream extends ImageOutputStreamImpl {
      * @param b the data.
      */
     @Override
-    public synchronized void write(byte b[]) throws IOException {
+    public synchronized void write(byte[] b) throws IOException {
         write(b, 0, b.length);
     }
 
@@ -267,7 +267,7 @@ public class ByteArrayImageOutputStream extends ImageOutputStreamImpl {
      * @param len the number of bytes to write.
      */
     @Override
-    public synchronized void write(byte b[], int off, int len) throws IOException {
+    public synchronized void write(byte[] b, int off, int len) throws IOException {
         flushBits();
         if ((off < 0) || (off > b.length) || (len < 0)
                 || ((off + len) > b.length) || ((off + len) < 0)) {

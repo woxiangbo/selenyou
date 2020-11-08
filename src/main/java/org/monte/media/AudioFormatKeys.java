@@ -12,9 +12,9 @@ package org.monte.media;
 
 import org.monte.media.math.Rational;
 
-import java.nio.ByteOrder;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioFormat.Encoding;
+import java.nio.ByteOrder;
 
 /**
  * Defines common format keys for audio media.
@@ -122,6 +122,6 @@ public class AudioFormatKeys extends FormatKeys {
                 fmt.get(ChannelsKey, 1),
                 fmt.containsKey(FrameSizeKey) ? fmt.get(FrameSizeKey) : (fmt.get(SampleSizeInBitsKey, 16) + 7) / 8 * fmt.get(ChannelsKey, 1),
                 fmt.containsKey(FrameRateKey) ? fmt.get(FrameRateKey).floatValue() : fmt.get(SampleRateKey).floatValue(),
-                fmt.containsKey(ByteOrderKey) ? fmt.get(ByteOrderKey) == ByteOrder.BIG_ENDIAN : true);
+                !fmt.containsKey(ByteOrderKey) || fmt.get(ByteOrderKey) == ByteOrder.BIG_ENDIAN);
     }
 }

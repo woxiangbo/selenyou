@@ -10,24 +10,19 @@
  */
 package org.monte.media.jpeg;
 
-import org.monte.media.io.ByteArrayImageInputStream;
-
-import javax.imageio.ImageReader;
-
-import org.monte.media.Format;
 import org.monte.media.AbstractVideoCodec;
 import org.monte.media.Buffer;
+import org.monte.media.Format;
+import org.monte.media.io.ByteArrayImageInputStream;
 import org.monte.media.io.ByteArrayImageOutputStream;
 
+import javax.imageio.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
 
+import static org.monte.media.BufferFlag.DISCARD;
+import static org.monte.media.BufferFlag.KEYFRAME;
 import static org.monte.media.VideoFormatKeys.*;
-import static org.monte.media.BufferFlag.*;
 
 /**
  * {@code JPEGCodec} encodes a BufferedImage as a byte[] array.

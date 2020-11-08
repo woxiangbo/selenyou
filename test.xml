@@ -4,9 +4,9 @@
 
 <suite name="主流程" parallel="classes" thread-count="10" preserve-order="true">
 
-<!--    <listeners>-->
-<!--        <listener class-name="TestngListenerDemo"/>-->
-<!--    </listeners>-->
+    <!--    <listeners>-->
+    <!--        <listener class-name="TestngListenerDemo"/>-->
+    <!--    </listeners>-->
 
     <test name="单页面检查">
         <classes>
@@ -15,7 +15,6 @@
             <class name="Demo3"/>
         </classes>
     </test>
-
 
 
     <!--    <test name="all">-->

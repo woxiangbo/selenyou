@@ -10,10 +10,10 @@
  */
 package org.monte.media.io;
 
-import java.io.IOException;
-import java.nio.ByteOrder;
 import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.stream.ImageOutputStreamImpl;
+import java.io.IOException;
+import java.nio.ByteOrder;
 
 /**
  * {@code SubImageOutputStream}.

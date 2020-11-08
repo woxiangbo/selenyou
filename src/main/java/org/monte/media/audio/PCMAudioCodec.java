@@ -16,14 +16,15 @@ import org.monte.media.Format;
 import org.monte.media.io.ByteArrayImageInputStream;
 import org.monte.media.io.ByteArrayImageOutputStream;
 
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteOrder;
-import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
 
 import static org.monte.media.AudioFormatKeys.*;
-import static org.monte.media.BufferFlag.*;
+import static org.monte.media.BufferFlag.DISCARD;
+import static org.monte.media.BufferFlag.KEYFRAME;
 
 /**
  * {@code PCMAudioCodec} performs sign conversion, endian conversion and
@@ -67,8 +68,8 @@ public class PCMAudioCodec extends AbstractAudioCodec {
             return CODEC_OK;
         }
 
-        Format inFormat = (Format) in.format;
-        Format outFormat = (Format) outputFormat;
+        Format inFormat = in.format;
+        Format outFormat = outputFormat;
         if (inFormat.get(SampleRateKey) == null || !inFormat.get(SampleRateKey).equals(outFormat.get(SampleRateKey))) {
             out.setFlag(DISCARD);
             return CODEC_FAILED;
@@ -318,7 +319,7 @@ public class PCMAudioCodec extends AbstractAudioCodec {
                     for (int i = 0; i < count; i++) {
                         // FIXME - For some reason, the Java sound system records
                         //         silence as -128 instead of 0.
-                        buf[i] = (byte) (buf[i] == -128 ? 0 : buf[i]);
+                        buf[i] = buf[i] == -128 ? 0 : buf[i];
                     }
                 }
                 out.write(buf, 0, count);

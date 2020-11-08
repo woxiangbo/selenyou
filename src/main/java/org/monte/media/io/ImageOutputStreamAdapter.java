@@ -10,10 +10,10 @@
  */
 package org.monte.media.io;
 
+import javax.imageio.stream.ImageOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import javax.imageio.stream.ImageOutputStream;
 
 /**
  * Adapts an {@code ImageOutputStream} for classes requiring an
@@ -77,7 +77,7 @@ public class ImageOutputStreamAdapter extends OutputStream {
      * @see FilterOutputStream#write(byte[], int, int)
      */
     @Override
-    public void write(byte b[]) throws IOException {
+    public void write(byte[] b) throws IOException {
         write(b, 0, b.length);
     }
 
@@ -102,7 +102,7 @@ public class ImageOutputStreamAdapter extends OutputStream {
      * @see FilterOutputStream#write(int)
      */
     @Override
-    public void write(byte b[], int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         out.write(b, off, len);
     }
 
