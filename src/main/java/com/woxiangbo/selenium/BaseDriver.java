@@ -1,7 +1,14 @@
 package com.woxiangbo.selenium;
 
 
+import org.openqa.selenium.Platform;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 public class BaseDriver {
     private String hubIp = "localhost";
@@ -10,7 +17,7 @@ public class BaseDriver {
     private WebDriver webDriver;
 
     public BaseDriver() {
-//        this.webDriver = demonstrateToWhichNodeWasMyTestRoutedTo();
+        webDriver = getRemoteChromeDriver();
     }
 
     public String getRoutedIpAndPort() {
@@ -19,6 +26,25 @@ public class BaseDriver {
 
     public WebDriver getWebDriver() {
         return webDriver;
+    }
+
+    public WebDriver getRemoteChromeDriver() {
+        RemoteWebDriver driver = null;
+
+        DesiredCapabilities capability = new DesiredCapabilities();
+        capability.setBrowserName("chrome");
+        capability.setPlatform(Platform.WINDOWS);
+
+        try {
+            driver = new RemoteWebDriver(new URL("http://192.168.1.9:4444/wd/hub"), capability);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+        driver.manage().timeouts().pageLoadTimeout(120, TimeUnit.SECONDS);
+        driver.manage().timeouts().setScriptTimeout(120, TimeUnit.SECONDS);
+
+        return driver;
     }
 
 //    public WebDriver demonstrateToWhichNodeWasMyTestRoutedTo() {

@@ -47,4 +47,10 @@ public class VideoProxy extends DefaultRemoteProxy {
             r.releaseConnection();
         }
     }
+
+    @Override
+    public void afterSession(TestSession session) {
+        super.afterSession(session);
+
+    }
 }

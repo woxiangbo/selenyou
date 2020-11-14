@@ -4,6 +4,7 @@ import com.woxiangbo.selenium.BaseDriver;
 import org.openqa.selenium.WebDriver;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
 
 @Listeners(TestngListener.class)
 @Video(store = "c:\\aabbccdd\\")
@@ -16,6 +17,11 @@ public class Base {
     public void beforeClass() {
         baseDriver = new BaseDriver();
         webDriver = baseDriver.getWebDriver();
-        routedIpAndPort = baseDriver.getRoutedIpAndPort();
+
+    }
+
+    @Test
+    public void test() {
+        webDriver.get("http://www.baidu.com");
     }
 }
