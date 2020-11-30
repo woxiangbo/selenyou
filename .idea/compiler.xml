@@ -9,5 +9,8 @@
         <module name="selenyou" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="gridEnhancer" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>
